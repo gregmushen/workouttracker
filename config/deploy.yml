@@ -30,7 +30,11 @@ proxy:
 
 builder:
   arch: amd64
+<% if ENV["KAMAL_BUILDER_DRIVER"] == "docker" %>
+  driver: docker
+<% else %>
   remote: ssh://<%= ENV.fetch("DEPLOY_USER", "deploy") %>@<%= ENV.fetch("DEPLOY_HOST", "127.0.0.1") %>
+<% end %>
 
 ssh:
   user: <%= ENV.fetch("DEPLOY_USER", "deploy") %>
