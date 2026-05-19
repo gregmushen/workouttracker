@@ -133,6 +133,12 @@ class BulkSetItem(BaseModel):
     rir: float | None = None
     notes: str | None = None
 
+    @model_validator(mode="after")
+    def check_required_fields(self):
+        if self.reps is None and self.duration_seconds is None:
+            raise ValueError("At least one of reps or duration_seconds is required")
+        return self
+
 
 class BulkSetIn(BaseModel):
     exercise_query: str

@@ -10,12 +10,13 @@ class WorkoutStats:
             s for s in sets
             if s.get("set_type") in ("working", "amrap", "failure")
             and s.get("weight") is not None
+            and s.get("reps") is not None
         ]
         if not working:
             return None
         return max(
             working,
-            key=lambda s: self.epley_1rm(s["weight"], s.get("reps") or 1),
+            key=lambda s: self.epley_1rm(s["weight"], s["reps"]),
         )
 
     def total_volume(self, sets: list[dict]) -> float:
@@ -49,7 +50,7 @@ class WorkoutStats:
         for session_id, group in groupby(sets, key=lambda s: s["session_id"]):
             group_list = list(group)
             top = self.top_set(group_list)
-            e1rm = self.epley_1rm(top["weight"], top.get("reps") or 1) if top else 0
+            e1rm = self.epley_1rm(top["weight"], top["reps"]) if top else 0
             all_e1rms.append(e1rm)
             sessions.append({
                 "session_id": session_id,

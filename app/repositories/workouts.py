@@ -175,12 +175,12 @@ class WorkoutRepository:
         """Best estimated 1RM per exercise (Epley: weight * (1 + reps/30))."""
         rows = self.conn.execute(
             """SELECT ws.exercise_template_id, e.name,
-                      MAX(ws.weight * (1.0 + COALESCE(ws.reps, 1) / 30.0)) as estimated_1rm,
+                      MAX(ws.weight * (1.0 + ws.reps / 30.0)) as estimated_1rm,
                       ws.weight as best_weight, ws.weight_unit, ws.reps as best_reps
                FROM workout_sets ws
                JOIN workout_sessions s ON s.id = ws.session_id
                JOIN exercise_templates e ON e.id = ws.exercise_template_id
-               WHERE s.user_id = ? AND ws.weight IS NOT NULL
+               WHERE s.user_id = ? AND ws.weight IS NOT NULL AND ws.reps IS NOT NULL
                AND ws.set_type IN ('working', 'amrap', 'failure')
                GROUP BY ws.exercise_template_id
                ORDER BY estimated_1rm DESC""",
