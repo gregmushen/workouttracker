@@ -52,4 +52,4 @@ steps:
       - test
     when:
       branch: master
-      event: push
+      event: [push, manual]
