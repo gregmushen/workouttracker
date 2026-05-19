@@ -548,6 +548,24 @@ ruff check app scripts tests alembic
 - Ruff
 - Docker/Kamal-compatible deployment
 
+## Deployment Configuration
+
+The included Kamal/Woodpecker files are parameterized. Set these secrets or environment variables in your CI/deploy environment:
+
+```text
+DEPLOY_HOST
+DEPLOY_USER
+DEPLOY_SSH_KEY
+REGISTRY_SERVER
+REGISTRY_USERNAME
+KAMAL_REGISTRY_PASSWORD
+APP_HOST
+WT_BEARER_TOKEN
+CLOUDFLARE_TUNNEL_TOKEN
+```
+
+The default image/service name is `workouttracker`.
+
 ## Specs
 
 - [Lifting Tracker API](docs/superpowers/specs/2026-05-19-lifting-tracker-design.md)
@@ -556,4 +574,3 @@ ruff check app scripts tests alembic
 ## License
 
 MIT. See [LICENSE](LICENSE).
-

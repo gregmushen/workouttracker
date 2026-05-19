@@ -14,20 +14,24 @@ if [[ $# -lt 1 ]]; then
 fi
 
 HOST_FILE="$1"
-HOST="192.168.1.76"
-SSH_KEY="${SSH_KEY:-$HOME/.ssh/stupidclaw_garageband_ed25519}"
-SSH="ssh -i $SSH_KEY -o StrictHostKeyChecking=no gregmushen@$HOST"
+HOST="${DEPLOY_HOST:?Set DEPLOY_HOST to the Docker host}"
+USER="${DEPLOY_USER:-deploy}"
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/deploy_key}"
+SERVICE="${KAMAL_SERVICE:-workouttracker}"
+DATA_VOLUME="${WORKOUTTRACKER_DATA_VOLUME:-workouttracker_data}"
+DB_PATH="${WT_DB_PATH:-/data/workout.db}"
+SSH="ssh -i $SSH_KEY -o StrictHostKeyChecking=no $USER@$HOST"
 
-IMAGE=$($SSH "docker inspect \$(docker ps --filter name=workouttracker-web --format '{{.Names}}' | head -1) --format '{{.Config.Image}}'")
+IMAGE=$($SSH "docker inspect \$(docker ps --filter name=${SERVICE}-web --format '{{.Names}}' | head -1) --format '{{.Config.Image}}'")
 
 echo "Using image: $IMAGE"
 echo "Importing: $HOST_FILE"
 
 $SSH "docker run --rm \
   -v \$(dirname '$HOST_FILE'):/exercise-data \
-  -v workouttracker_data:/data \
+  -v $DATA_VOLUME:/data \
   --entrypoint python \
   '$IMAGE' \
   -m scripts.import_exercises \
   /exercise-data/\$(basename '$HOST_FILE') \
-  /data/workout.db"
+  '$DB_PATH'"

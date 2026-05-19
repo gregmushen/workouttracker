@@ -3,11 +3,11 @@ image: workouttracker
 
 servers:
   web:
-    - 192.168.1.76
+    - <%= ENV.fetch("DEPLOY_HOST", "127.0.0.1") %>
 
 registry:
-  server: 192.168.1.76:5000
-  username: kamal
+  server: <%= ENV.fetch("REGISTRY_SERVER", "registry.example.com") %>
+  username: <%= ENV.fetch("REGISTRY_USERNAME", "kamal") %>
   password:
     - KAMAL_REGISTRY_PASSWORD
 
@@ -21,7 +21,7 @@ volumes:
   - workouttracker_data:/data
 
 proxy:
-  host: wt.paracosmlab.com
+  host: <%= ENV.fetch("APP_HOST", "workouttracker.example.com") %>
   app_port: 8000
   healthcheck:
     path: /health
@@ -30,17 +30,17 @@ proxy:
 
 builder:
   arch: amd64
-  remote: ssh://gregmushen@192.168.1.76
+  remote: ssh://<%= ENV.fetch("DEPLOY_USER", "deploy") %>@<%= ENV.fetch("DEPLOY_HOST", "127.0.0.1") %>
 
 ssh:
-  user: gregmushen
+  user: <%= ENV.fetch("DEPLOY_USER", "deploy") %>
   keys:
-    - ~/.ssh/stupidclaw_garageband_ed25519
+    - ~/.ssh/deploy_key
 
 accessories:
   cloudflared:
     image: cloudflare/cloudflared:latest
-    host: 192.168.1.76
+    host: <%= ENV.fetch("DEPLOY_HOST", "127.0.0.1") %>
     cmd: tunnel --no-autoupdate run
     env:
       secret:
