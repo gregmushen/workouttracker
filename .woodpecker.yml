@@ -37,11 +37,6 @@ steps:
       - chmod 600 ~/.ssh/stupidclaw_garageband_ed25519
       - printf "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n" > ~/.ssh/config
       - printf "WT_BEARER_TOKEN=%s\nTUNNEL_TOKEN=%s\nKAMAL_REGISTRY_PASSWORD=%s\n" "$WT_BEARER_TOKEN" "$CLOUDFLARE_TUNNEL_TOKEN" "$KAMAL_REGISTRY_PASSWORD" > .kamal/secrets
-      - printf '[registry."192.168.1.76:5000"]\n  http = true\n  insecure = true\n' > /tmp/buildkitd.toml
-      - docker rm -f buildx_buildkit_kamal-remote-ssh---gregmushen-192-168-1-760 2>/dev/null || true
-      - docker context create kamal-remote-ssh---gregmushen-192-168-1-76-context --docker "host=ssh://gregmushen@192.168.1.76" 2>/dev/null || true
-      - docker buildx rm kamal-remote-ssh---gregmushen-192-168-1-76 2>/dev/null || true
-      - docker buildx create --name kamal-remote-ssh---gregmushen-192-168-1-76 --config /tmp/buildkitd.toml kamal-remote-ssh---gregmushen-192-168-1-76-context
       - kamal deploy
       - kamal accessory boot cloudflared 2>/dev/null || kamal accessory reboot cloudflared
     environment:
