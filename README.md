@@ -566,10 +566,15 @@ CLOUDFLARE_TUNNEL_TOKEN
 
 The default image/service name is `workouttracker`.
 
-## Specs
+## Documentation
 
-- [Lifting Tracker API](docs/superpowers/specs/2026-05-19-lifting-tracker-design.md)
-- [Exercise Library API](docs/superpowers/specs/2026-05-19-exercise-library-api.md)
+- [Getting Started](docs/getting-started.md)
+- [API Guide](docs/api.md)
+- [Exercise Library](docs/exercise-library.md)
+- [Workout Logging](docs/workout-logging.md)
+- [Exercise Data Import](docs/exercise-data.md)
+- [Agent Workflows](docs/agent-workflows.md)
+- [Deployment](docs/deployment.md)
 
 ## License
 
