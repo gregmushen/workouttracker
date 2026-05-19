@@ -1,4 +1,7 @@
 from logging.config import fileConfig
+import os
+from pathlib import Path
+
 from alembic import context
 
 config = context.config
@@ -17,10 +20,10 @@ def run_migrations_offline():
 
 def run_migrations_online():
     from sqlalchemy import create_engine
-    from app.config import settings
 
-    db_path = settings.db_path
+    db_path = Path(os.environ.get("WT_DB_PATH", "data/workout.db"))
     db_path.parent.mkdir(parents=True, exist_ok=True)
+    config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path}")
     connectable = create_engine(
         f"sqlite:///{db_path}",
         connect_args={"check_same_thread": False},
