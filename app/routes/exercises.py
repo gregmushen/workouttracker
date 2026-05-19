@@ -1,4 +1,6 @@
 import json
+import sqlite3
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request
 from app.models.exercise import ExerciseCreate, ExerciseUpdate, ExerciseOut, AliasCreate, AliasOut
 from app.repositories.exercises import ExerciseRepository
@@ -66,11 +68,11 @@ def add_alias(request: Request, exercise_id: int, body: AliasCreate):
         raise HTTPException(404, "Exercise not found")
     try:
         alias_id = repo.add_alias(exercise_id, body.alias)
-    except Exception:
+    except sqlite3.IntegrityError:
         raise HTTPException(409, f"Alias '{body.alias}' already exists")
-    import datetime
+    normalized = body.alias.lower().strip()
     return {"id": alias_id, "exercise_template_id": exercise_id,
-            "alias": body.alias.lower().strip(), "created_at": datetime.datetime.now()}
+            "alias": normalized, "created_at": datetime.now()}
 
 
 @router.delete("/aliases/{alias_id}", status_code=204, summary="Delete alias")
