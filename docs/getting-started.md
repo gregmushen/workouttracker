@@ -14,6 +14,18 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
+For a normal local run, use the packaged CLI:
+
+```bash
+workouttracker serve --db ./data/workout.db --token replace-with-a-long-random-token
+```
+
+Open the UI at:
+
+```text
+http://127.0.0.1:8000
+```
+
 ## Configure
 
 Set a bearer token and database path:
@@ -27,13 +39,13 @@ export WT_PUBLIC_BASE_URL="http://localhost:8000"
 ## Migrate
 
 ```bash
-alembic upgrade head
+workouttracker migrate --db ./data/workout.db
 ```
 
 ## Run
 
 ```bash
-uvicorn app.main:app --reload
+workouttracker serve --db ./data/workout.db
 ```
 
 Check the API:
@@ -53,8 +65,7 @@ ruff check app scripts tests alembic
 
 1. Install dependencies.
 2. Set `WT_BEARER_TOKEN`.
-3. Run migrations.
+3. Run `workouttracker migrate`.
 4. Import exercise data.
 5. Add any personal aliases or preferences.
 6. Start logging workout sessions and sets.
-

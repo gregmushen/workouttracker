@@ -89,12 +89,22 @@ class WorkoutRepository:
         return cur.lastrowid
 
     def get_set(self, set_id: int) -> dict | None:
-        row = self.conn.execute("SELECT * FROM workout_sets WHERE id = ?", (set_id,)).fetchone()
+        row = self.conn.execute(
+            """SELECT ws.*, e.name AS exercise_name
+               FROM workout_sets ws
+               LEFT JOIN exercise_templates e ON e.id = ws.exercise_template_id
+               WHERE ws.id = ?""",
+            (set_id,),
+        ).fetchone()
         return dict(row) if row else None
 
     def list_sets(self, session_id: int) -> list[dict]:
         rows = self.conn.execute(
-            "SELECT * FROM workout_sets WHERE session_id = ? ORDER BY set_number, id",
+            """SELECT ws.*, e.name AS exercise_name
+               FROM workout_sets ws
+               LEFT JOIN exercise_templates e ON e.id = ws.exercise_template_id
+               WHERE ws.session_id = ?
+               ORDER BY ws.set_number, ws.id""",
             (session_id,),
         ).fetchall()
         return [dict(r) for r in rows]

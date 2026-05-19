@@ -8,6 +8,8 @@ from app.config import settings
 from app.database import get_connection, init_schema
 from app.repositories.exercises import ExerciseRepository
 from app.routes.exercises import router as exercises_router
+from app.routes.ui import mount_static
+from app.routes.ui import router as ui_router
 from app.routes.workouts import router as workouts_router
 
 
@@ -60,15 +62,18 @@ _auth = [Depends(require_auth)]
 app.include_router(exercises_router, dependencies=_auth)
 app.include_router(workouts_router, dependencies=_auth)
 
-public_dir = Path("public")
-exercise_images_dir = public_dir / "exercise-images"
-exercise_images_dir.mkdir(parents=True, exist_ok=True)
-app.mount("/exercise-images", StaticFiles(directory=exercise_images_dir), name="exercise-images")
-
 
 @app.get("/health")
 def health():
     return {"status": "ok", "version": settings.api_version}
+
+
+public_dir = Path("public")
+exercise_images_dir = public_dir / "exercise-images"
+exercise_images_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/exercise-images", StaticFiles(directory=exercise_images_dir), name="exercise-images")
+mount_static(app)
+app.include_router(ui_router)
 
 
 def custom_openapi():
@@ -141,6 +146,10 @@ def custom_openapi():
             "For ambiguous phrases, call resolve first and persist user choices as preferences.",
             "Keep coaching feedback short, specific, and recovery-aware.",
         ],
+        "ui": {
+            "routes": ["/", "/today", "/sessions", "/exercises", "/progress", "/settings"],
+            "note": "A lightweight web UI is available for human review and quick manual logging. Agents should prefer structured API operations for writes.",
+        },
     }
     app.openapi_schema = schema
     return app.openapi_schema

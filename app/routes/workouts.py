@@ -76,6 +76,14 @@ def create_set(request: Request, session_id: int, body: WorkoutSetCreate):
     return repo.get_set(set_id)
 
 
+@router.get("/sessions/{session_id}/sets")
+def list_sets(request: Request, session_id: int):
+    repo = _repo(request)
+    if not repo.get_session(session_id):
+        raise HTTPException(404, "Session not found")
+    return repo.list_sets(session_id)
+
+
 @router.post("/sessions/{session_id}/sets/bulk", status_code=201,
              response_model=list[WorkoutSetOut])
 def bulk_create_sets(request: Request, session_id: int, body: BulkSetIn):

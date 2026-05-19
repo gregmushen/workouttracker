@@ -13,6 +13,8 @@ close out this workout, felt tired but steady
 
 The API handles the durable facts: exercises, aliases, workout sessions, sets, effort, and progress. An agent or client can handle the conversation.
 
+Workout Tracker also includes a lightweight web UI. The UI is intentionally thin: it sits on top of the same API and gives you a quick human control surface for today's session, exercise search, session review, and progress checks.
+
 ## What It Tracks
 
 Workout Tracker supports:
@@ -511,6 +513,26 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
+Start the packaged app:
+
+```bash
+workouttracker serve --db ./data/workout.db --token replace-with-a-long-random-token
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000
+```
+
+Useful CLI commands:
+
+```bash
+workouttracker migrate --db ./data/workout.db
+workouttracker import-exercises /path/to/free-exercise-db/dist/exercises.json --db ./data/workout.db
+workouttracker version
+```
+
 Set environment:
 
 ```bash
@@ -530,6 +552,8 @@ Run the server:
 ```bash
 uvicorn app.main:app --reload
 ```
+
+The FastAPI app serves both the REST API and the vanilla JavaScript UI. API docs remain available at `/docs`, `/redoc`, and `/openapi.json`.
 
 Run checks:
 
