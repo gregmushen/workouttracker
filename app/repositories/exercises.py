@@ -118,13 +118,16 @@ class ExerciseRepository:
 
     def search_fts(self, query: str, limit: int = 20) -> list[dict]:
         fts_query = " ".join(f"{term}*" for term in query.strip().split())
-        rows = self.conn.execute(
-            """SELECT e.* FROM exercise_templates_fts fts
-               JOIN exercise_templates e ON e.id = fts.rowid
-               WHERE exercise_templates_fts MATCH ?
-               ORDER BY rank LIMIT ?""",
-            (fts_query, limit),
-        ).fetchall()
+        try:
+            rows = self.conn.execute(
+                """SELECT e.* FROM exercise_templates_fts fts
+                   JOIN exercise_templates e ON e.id = fts.rowid
+                   WHERE exercise_templates_fts MATCH ?
+                   ORDER BY rank LIMIT ?""",
+                (fts_query, limit),
+            ).fetchall()
+        except Exception:
+            return []
         return [self._row_to_dict(r) for r in rows]
 
     def update(self, exercise_id: int, **kwargs) -> bool:
