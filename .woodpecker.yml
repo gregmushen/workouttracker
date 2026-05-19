@@ -37,6 +37,9 @@ steps:
       - chmod 600 ~/.ssh/deploy_key
       - printf "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n" > ~/.ssh/config
       - printf "WT_BEARER_TOKEN=%s\nTUNNEL_TOKEN=%s\nKAMAL_REGISTRY_PASSWORD=%s\n" "$WT_BEARER_TOKEN" "$CLOUDFLARE_TUNNEL_TOKEN" "$KAMAL_REGISTRY_PASSWORD" > .kamal/secrets
+      - printf '[registry."192.168.1.76:5000"]\n  http = true\n  insecure = true\n' > /tmp/buildkitd.toml
+      - docker buildx rm kamal-local-docker-container 2>/dev/null || true
+      - docker buildx create --name kamal-local-docker-container --driver docker-container --config /tmp/buildkitd.toml --bootstrap
       - kamal deploy
       - kamal accessory boot cloudflared 2>/dev/null || kamal accessory reboot cloudflared
     environment:
