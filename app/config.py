@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     default_user_id: int = 1
     api_version: str = "0.1.0"
     bearer_token: Optional[str] = None
+    public_base_url: Optional[str] = None
 
     model_config = {"env_prefix": "WT_"}
 

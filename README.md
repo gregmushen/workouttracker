@@ -9,7 +9,11 @@ A personal lifting and workout tracking API built with FastAPI and SQLite.
 REST API for logging strength training sessions, sets, and tracking progress.
 
 Key endpoints:
-- `GET /exercises/search?q=` — full-text search with alias support (e.g. "bench" → Barbell Bench Press)
+- `GET /exercises/search?q=` — full-text search with alias, image URL, and filter support
+- `POST /exercises/resolve` — AI-friendly fuzzy exercise resolution with confidence and confirmation flags
+- `GET /exercises/facets` — available categories, equipment, muscles, levels, mechanics, and forces
+- `GET/POST/PATCH/DELETE /exercises/preferences` — remember user-specific phrase mappings
+- `GET/POST /exercises/{id}/aliases` — list and create shorthand aliases
 - `POST /workouts/sessions` — start a workout session
 - `POST /workouts/sessions/{id}/sets/bulk` — log multiple sets in one call
 - `GET /workouts/recent?exercise_id=` — last N sessions for an exercise
@@ -18,6 +22,8 @@ Key endpoints:
 - `POST /workouts/sessions/{id}/close` — close out a session
 
 All endpoints require `Authorization: Bearer <token>`.
+
+Exercise images are served from static public files under `/exercise-images/...`.
 
 ## Stack
 
@@ -44,6 +50,21 @@ bin/import-exercises /home/gregmushen/workout-data/exercises.json
 
 Re-running is safe — exercises are upserted by `(source, source_code)`.
 
+For local imports with images:
+
+```bash
+python -m scripts.import_exercises \
+  /path/to/free-exercise-db/dist/exercises.json \
+  ./data/workout.db \
+  --images-root /path/to/free-exercise-db/exercises \
+  --public-images-root public/exercise-images
+```
+
+Useful import flags:
+
+- `--dry-run` — validate and report without writing
+- `--deactivate-missing` — mark imported exercises inactive if missing from the new source file
+
 ## Bulk set logging
 
 ```bash
@@ -61,7 +82,24 @@ curl -s -X POST \
   "https://wt.paracosmlab.com/workouts/sessions/1/sets/bulk"
 ```
 
+## Exercise resolution
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "bench",
+    "context": {
+      "equipment_available": ["barbell", "dumbbell"],
+      "recent_exercise_ids": []
+    }
+  }' \
+  "https://wt.paracosmlab.com/exercises/resolve"
+```
+
+The response includes `best_match`, `alternatives`, `confidence`, `match_reason`, and `needs_confirmation`.
+
 ## License
 
 MIT.
-

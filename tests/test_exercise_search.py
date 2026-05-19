@@ -18,7 +18,7 @@ def test_search_falls_back_to_fts(db):
 
 def test_alias_takes_priority(db):
     eid1 = _seed(db, "Barbell Bench Press", equipment="barbell")
-    eid2 = _seed(db, "Bench Something Else", equipment="dumbbell")
+    _seed(db, "Bench Something Else", equipment="dumbbell")
     repo = ExerciseRepository(db)
     repo.add_alias(eid1, "bench")
     svc = ExerciseSearchService(repo)

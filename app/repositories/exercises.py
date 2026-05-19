@@ -5,7 +5,7 @@ import sqlite3
 _FIELDS = [
     "source_code", "normalized_name", "category", "equipment", "force",
     "level", "mechanic", "primary_muscles", "secondary_muscles",
-    "instructions", "image_paths",
+    "instructions", "image_paths", "active",
 ]
 
 
@@ -67,6 +67,18 @@ class ExerciseRepository:
                     d[field] = json.loads(d[field])
                 except (json.JSONDecodeError, TypeError):
                     d[field] = []
+        if "active" in d:
+            d["active"] = bool(d["active"])
+        return d
+
+    def _preference_to_dict(self, row) -> dict | None:
+        if row is None:
+            return None
+        d = dict(row)
+        try:
+            d["context"] = json.loads(d.get("context") or "{}")
+        except (json.JSONDecodeError, TypeError):
+            d["context"] = {}
         return d
 
     def create(self, *, source: str, name: str, **kwargs) -> int:
@@ -96,7 +108,7 @@ class ExerciseRepository:
 
     def get(self, exercise_id: int) -> dict | None:
         row = self.conn.execute(
-            "SELECT * FROM exercise_templates WHERE id = ?", (exercise_id,)
+            "SELECT * FROM exercise_templates WHERE id = ? AND active = 1", (exercise_id,)
         ).fetchone()
         return self._row_to_dict(row)
 
@@ -111,23 +123,62 @@ class ExerciseRepository:
         row = self.conn.execute(
             """SELECT e.* FROM exercise_templates e
                JOIN exercise_aliases a ON a.exercise_template_id = e.id
-               WHERE a.alias = ?""",
-            (alias.lower().strip(),),
+               WHERE a.normalized_alias = ? AND e.active = 1
+               ORDER BY CASE a.source WHEN 'user' THEN 0 WHEN 'agent' THEN 1 ELSE 2 END,
+                        a.confidence DESC
+               LIMIT 1""",
+            (_normalize(alias),),
         ).fetchone()
         return self._row_to_dict(row)
 
-    def search_fts(self, query: str, limit: int = 20) -> list[dict]:
+    def get_by_normalized_name(self, name: str) -> dict | None:
+        row = self.conn.execute(
+            "SELECT * FROM exercise_templates WHERE normalized_name = ? AND active = 1 LIMIT 1",
+            (_normalize(name),),
+        ).fetchone()
+        return self._row_to_dict(row)
+
+    def search_fts(self, query: str, limit: int = 20, **filters) -> list[dict]:
         fts_query = " ".join(f"{term}*" for term in query.strip().split())
+        where = ["exercise_templates_fts MATCH ?", "e.active = 1"]
+        values = [fts_query]
+        for field in ("equipment", "category", "level", "mechanic", "force"):
+            if filters.get(field):
+                where.append(f"lower(e.{field}) = lower(?)")
+                values.append(filters[field])
+        if filters.get("muscle"):
+            where.append("(lower(e.primary_muscles) LIKE lower(?) OR lower(e.secondary_muscles) LIKE lower(?))")
+            muscle = f"%{filters['muscle']}%"
+            values.extend([muscle, muscle])
+        values.append(limit)
         try:
             rows = self.conn.execute(
                 """SELECT e.* FROM exercise_templates_fts fts
                    JOIN exercise_templates e ON e.id = fts.rowid
-                   WHERE exercise_templates_fts MATCH ?
+                   WHERE """ + " AND ".join(where) + """
                    ORDER BY rank LIMIT ?""",
-                (fts_query, limit),
+                values,
             ).fetchall()
         except Exception:
             return []
+        return [self._row_to_dict(r) for r in rows]
+
+    def list_filtered(self, limit: int = 20, **filters) -> list[dict]:
+        where = ["active = 1"]
+        values = []
+        for field in ("equipment", "category", "level", "mechanic", "force"):
+            if filters.get(field):
+                where.append(f"lower({field}) = lower(?)")
+                values.append(filters[field])
+        if filters.get("muscle"):
+            where.append("(lower(primary_muscles) LIKE lower(?) OR lower(secondary_muscles) LIKE lower(?))")
+            muscle = f"%{filters['muscle']}%"
+            values.extend([muscle, muscle])
+        values.append(limit)
+        rows = self.conn.execute(
+            "SELECT * FROM exercise_templates WHERE " + " AND ".join(where) + " ORDER BY name LIMIT ?",
+            values,
+        ).fetchall()
         return [self._row_to_dict(r) for r in rows]
 
     def update(self, exercise_id: int, **kwargs) -> bool:
@@ -146,15 +197,20 @@ class ExerciseRepository:
 
     def delete(self, exercise_id: int) -> bool:
         cur = self.conn.execute(
-            "DELETE FROM exercise_templates WHERE id = ?", (exercise_id,)
+            "UPDATE exercise_templates SET active = 0, updated_at = datetime('now') WHERE id = ?",
+            (exercise_id,)
         )
         self.conn.commit()
         return cur.rowcount > 0
 
-    def add_alias(self, exercise_id: int, alias: str) -> int:
+    def add_alias(self, exercise_id: int, alias: str, source: str = "user",
+                  confidence: float = 1.0) -> int:
+        normalized = _normalize(alias)
         cur = self.conn.execute(
-            "INSERT INTO exercise_aliases (exercise_template_id, alias) VALUES (?, ?)",
-            (exercise_id, alias.lower().strip()),
+            """INSERT INTO exercise_aliases
+               (exercise_template_id, alias, normalized_alias, source, confidence)
+               VALUES (?, ?, ?, ?, ?)""",
+            (exercise_id, normalized, normalized, source, confidence),
         )
         self.conn.commit()
         return cur.lastrowid
@@ -170,3 +226,106 @@ class ExerciseRepository:
             (exercise_id,),
         ).fetchall()
         return [dict(r) for r in rows]
+
+    def get_preference(self, *, user_id: int, phrase: str) -> dict | None:
+        row = self.conn.execute(
+            """SELECT * FROM exercise_preferences
+               WHERE user_id = ? AND normalized_phrase = ?""",
+            (user_id, _normalize(phrase)),
+        ).fetchone()
+        return self._preference_to_dict(row)
+
+    def list_preferences(self, *, user_id: int) -> list[dict]:
+        rows = self.conn.execute(
+            "SELECT * FROM exercise_preferences WHERE user_id = ? ORDER BY phrase",
+            (user_id,),
+        ).fetchall()
+        return [self._preference_to_dict(r) for r in rows]
+
+    def upsert_preference(self, *, user_id: int, phrase: str,
+                          preferred_exercise_id: int, context: dict | None = None) -> int:
+        normalized = _normalize(phrase)
+        self.conn.execute(
+            """INSERT INTO exercise_preferences
+               (user_id, phrase, normalized_phrase, preferred_exercise_id, context)
+               VALUES (?, ?, ?, ?, ?)
+               ON CONFLICT(user_id, normalized_phrase) DO UPDATE SET
+                   phrase = excluded.phrase,
+                   preferred_exercise_id = excluded.preferred_exercise_id,
+                   context = excluded.context,
+                   updated_at = datetime('now')""",
+            (user_id, phrase, normalized, preferred_exercise_id, json.dumps(context or {})),
+        )
+        self.conn.commit()
+        row = self.conn.execute(
+            "SELECT id FROM exercise_preferences WHERE user_id = ? AND normalized_phrase = ?",
+            (user_id, normalized),
+        ).fetchone()
+        return row["id"]
+
+    def update_preference(self, pref_id: int, **updates) -> bool:
+        if not updates:
+            return self.get_preference_by_id(pref_id) is not None
+        if "phrase" in updates:
+            updates["normalized_phrase"] = _normalize(updates["phrase"])
+        if "context" in updates and isinstance(updates["context"], dict):
+            updates["context"] = json.dumps(updates["context"])
+        sets = ", ".join(f"{k} = ?" for k in updates)
+        values = list(updates.values()) + [pref_id]
+        cur = self.conn.execute(
+            f"UPDATE exercise_preferences SET {sets}, updated_at = datetime('now') WHERE id = ?",
+            values,
+        )
+        self.conn.commit()
+        return cur.rowcount > 0
+
+    def get_preference_by_id(self, pref_id: int) -> dict | None:
+        row = self.conn.execute(
+            "SELECT * FROM exercise_preferences WHERE id = ?", (pref_id,)
+        ).fetchone()
+        return self._preference_to_dict(row)
+
+    def delete_preference(self, pref_id: int) -> bool:
+        cur = self.conn.execute("DELETE FROM exercise_preferences WHERE id = ?", (pref_id,))
+        self.conn.commit()
+        return cur.rowcount > 0
+
+    def facets(self) -> dict:
+        def values_for(column: str) -> list[str]:
+            rows = self.conn.execute(
+                f"""SELECT DISTINCT {column} value FROM exercise_templates
+                    WHERE active = 1 AND {column} IS NOT NULL AND {column} != ''
+                    ORDER BY {column}"""
+            ).fetchall()
+            return [r["value"] for r in rows]
+
+        muscles = set()
+        rows = self.conn.execute(
+            """SELECT primary_muscles, secondary_muscles FROM exercise_templates
+               WHERE active = 1"""
+        ).fetchall()
+        for row in rows:
+            for field in ("primary_muscles", "secondary_muscles"):
+                try:
+                    muscles.update(json.loads(row[field] or "[]"))
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
+        return {
+            "categories": values_for("category"),
+            "equipment": values_for("equipment"),
+            "muscles": sorted(m for m in muscles if m),
+            "levels": values_for("level"),
+            "mechanics": values_for("mechanic"),
+            "forces": values_for("force"),
+        }
+
+    def log_search(self, *, user_id: int, query: str, matched_exercise_id: int | None,
+                   confidence: float | None, required_confirmation: bool) -> None:
+        self.conn.execute(
+            """INSERT INTO exercise_search_logs
+               (user_id, query, matched_exercise_id, confidence, required_confirmation)
+               VALUES (?, ?, ?, ?, ?)""",
+            (user_id, query, matched_exercise_id, confidence, int(required_confirmation)),
+        )
+        self.conn.commit()

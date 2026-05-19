@@ -1,8 +1,9 @@
 import json
 import os
 import tempfile
+from pathlib import Path
 from scripts.import_exercises import import_exercises
-from app.database import get_connection, init_schema
+from app.database import get_connection
 from app.repositories.exercises import ExerciseRepository
 
 SAMPLE = [
@@ -72,6 +73,47 @@ def test_import_is_idempotent():
             "SELECT COUNT(*) FROM exercise_templates WHERE source='free_exercise_db'"
         ).fetchone()[0]
         assert total == 2
+        conn.close()
+    finally:
+        os.unlink(path)
+        os.unlink(db_path)
+
+
+def test_import_copies_images():
+    sample = [{**SAMPLE[0], "images": ["Bench/0.jpg"]}]
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        json_path = root / "exercises.json"
+        db_path = root / "workout.db"
+        images_root = root / "source-images"
+        public_root = root / "public" / "exercise-images"
+        (images_root / "Bench").mkdir(parents=True)
+        (images_root / "Bench" / "0.jpg").write_bytes(b"fake image")
+        json_path.write_text(json.dumps(sample))
+
+        import_exercises(
+            str(json_path),
+            str(db_path),
+            images_root=str(images_root),
+            public_images_root=str(public_root),
+        )
+
+        assert (public_root / "Bench" / "0.jpg").read_bytes() == b"fake image"
+
+
+def test_import_dry_run_does_not_write():
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        json.dump(SAMPLE, f)
+        path = f.name
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as dbf:
+        db_path = dbf.name
+    try:
+        import_exercises(path, db_path, dry_run=True)
+        conn = get_connection(Path(db_path))
+        total = conn.execute(
+            "SELECT COUNT(*) FROM exercise_templates WHERE source='free_exercise_db'"
+        ).fetchone()[0]
+        assert total == 0
         conn.close()
     finally:
         os.unlink(path)

@@ -31,6 +31,7 @@ def init_schema(conn: sqlite3.Connection) -> None:
             secondary_muscles TEXT NOT NULL DEFAULT '[]',
             instructions TEXT NOT NULL DEFAULT '[]',
             image_paths TEXT NOT NULL DEFAULT '[]',
+            active INTEGER NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             updated_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
@@ -40,8 +41,35 @@ def init_schema(conn: sqlite3.Connection) -> None:
             exercise_template_id INTEGER NOT NULL
                 REFERENCES exercise_templates(id) ON DELETE CASCADE,
             alias TEXT NOT NULL,
+            normalized_alias TEXT NOT NULL DEFAULT '',
+            source TEXT NOT NULL DEFAULT 'user'
+                CHECK(source IN ('system', 'user', 'agent')),
+            confidence REAL NOT NULL DEFAULT 1.0,
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             UNIQUE(alias)
+        );
+
+        CREATE TABLE IF NOT EXISTS exercise_preferences (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL DEFAULT 1,
+            phrase TEXT NOT NULL,
+            normalized_phrase TEXT NOT NULL,
+            preferred_exercise_id INTEGER NOT NULL
+                REFERENCES exercise_templates(id) ON DELETE CASCADE,
+            context TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(user_id, normalized_phrase)
+        );
+
+        CREATE TABLE IF NOT EXISTS exercise_search_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL DEFAULT 1,
+            query TEXT NOT NULL,
+            matched_exercise_id INTEGER REFERENCES exercise_templates(id),
+            confidence REAL,
+            required_confirmation INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
 
         CREATE TABLE IF NOT EXISTS workout_sessions (
@@ -89,6 +117,12 @@ def init_schema(conn: sqlite3.Connection) -> None:
             ON exercise_templates(source, source_code) WHERE source_code IS NOT NULL;
         CREATE INDEX IF NOT EXISTS idx_exercise_name
             ON exercise_templates(normalized_name);
+        CREATE INDEX IF NOT EXISTS idx_exercise_category
+            ON exercise_templates(category);
+        CREATE INDEX IF NOT EXISTS idx_exercise_equipment
+            ON exercise_templates(equipment);
+        CREATE INDEX IF NOT EXISTS idx_alias_normalized
+            ON exercise_aliases(normalized_alias);
         CREATE INDEX IF NOT EXISTS idx_sessions_user_date
             ON workout_sessions(user_id, date);
         CREATE INDEX IF NOT EXISTS idx_sets_session
@@ -96,3 +130,18 @@ def init_schema(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_sets_exercise
             ON workout_sets(exercise_template_id);
     """)
+
+    _ensure_column(conn, "exercise_templates", "active", "INTEGER NOT NULL DEFAULT 1")
+    _ensure_column(conn, "exercise_aliases", "normalized_alias", "TEXT NOT NULL DEFAULT ''")
+    _ensure_column(conn, "exercise_aliases", "source", "TEXT NOT NULL DEFAULT 'user'")
+    _ensure_column(conn, "exercise_aliases", "confidence", "REAL NOT NULL DEFAULT 1.0")
+    conn.execute(
+        "UPDATE exercise_aliases SET normalized_alias = lower(trim(alias)) WHERE normalized_alias = ''"
+    )
+    conn.commit()
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+    if column not in columns:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
