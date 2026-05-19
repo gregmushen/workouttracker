@@ -1,0 +1,55 @@
+steps:
+  lint:
+    image: python:3.12-slim
+    commands:
+      - pip install ruff
+      - ruff check app/ tests/ scripts/
+    when:
+      event: [push, pull_request, manual, tag]
+
+  secret-scan:
+    image: zricethezav/gitleaks:latest
+    commands:
+      - gitleaks detect --source . --verbose --no-banner
+    when:
+      event: [push, pull_request, manual, tag]
+
+  test:
+    image: python:3.12-slim
+    commands:
+      - pip install -e ".[dev]"
+      - pytest tests/ --tb=short -q
+    depends_on:
+      - lint
+      - secret-scan
+    when:
+      event: [push, pull_request, manual, tag]
+
+  deploy:
+    image: ruby:3.3-alpine
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - apk add --no-cache openssh-client curl git docker-cli docker-cli-buildx build-base
+      - gem install kamal --no-document -q
+      - mkdir -p ~/.ssh
+      - echo "$DEPLOY_SSH_KEY" > ~/.ssh/stupidclaw_garageband_ed25519
+      - chmod 600 ~/.ssh/stupidclaw_garageband_ed25519
+      - printf "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n" > ~/.ssh/config
+      - printf "WT_BEARER_TOKEN=%s\nTUNNEL_TOKEN=%s\nKAMAL_REGISTRY_PASSWORD=%s\n" "$WT_BEARER_TOKEN" "$CLOUDFLARE_TUNNEL_TOKEN" "$KAMAL_REGISTRY_PASSWORD" > .kamal/secrets
+      - kamal deploy
+      - kamal accessory boot cloudflared 2>/dev/null || kamal accessory reboot cloudflared
+    environment:
+      DEPLOY_SSH_KEY:
+        from_secret: deploy_ssh_key
+      WT_BEARER_TOKEN:
+        from_secret: WT_BEARER_TOKEN
+      CLOUDFLARE_TUNNEL_TOKEN:
+        from_secret: CLOUDFLARE_TUNNEL_TOKEN
+      KAMAL_REGISTRY_PASSWORD:
+        from_secret: KAMAL_REGISTRY_PASSWORD
+    depends_on:
+      - test
+    when:
+      branch: master
+      event: push
