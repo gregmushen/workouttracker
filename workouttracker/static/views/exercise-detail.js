@@ -27,11 +27,7 @@ export function renderExerciseDetail(container, { exerciseId }) {
     `;
 
     async function load() {
-        const [exercise, recent, progress] = await Promise.all([
-            fetchAPI(`/exercises/${exerciseId}`),
-            fetchAPI(`/workouts/recent?exercise_id=${exerciseId}&limit=8`),
-            fetchAPI(`/workouts/progress?exercise_id=${exerciseId}`),
-        ]);
+        const exercise = await fetchAPI(`/exercises/${exerciseId}`);
         container.querySelector('#exercise-title').textContent = exercise.name;
         container.querySelector('#exercise-subtitle').textContent = [exercise.category, exercise.equipment, exercise.level].filter(Boolean).join(' - ');
         container.querySelector('#exercise-details').innerHTML = `
@@ -43,8 +39,24 @@ export function renderExerciseDetail(container, { exerciseId }) {
                 ${(exercise.instructions || []).length ? `<ol style="padding-left:20px">${exercise.instructions.map(i => `<li>${esc(i)}</li>`).join('')}</ol>` : ''}
             </div>
         `;
-        renderRecent(recent);
-        renderProgress(progress);
+        loadRecent();
+        loadProgress();
+    }
+
+    async function loadRecent() {
+        try {
+            renderRecent(await fetchAPI(`/workouts/recent?exercise_id=${exerciseId}&limit=8`));
+        } catch (err) {
+            container.querySelector('#recent-body').innerHTML = renderEmpty('error', 'Could not load recent sets', err.message);
+        }
+    }
+
+    async function loadProgress() {
+        try {
+            renderProgress(await fetchAPI(`/workouts/progress?exercise_id=${exerciseId}`));
+        } catch (err) {
+            container.querySelector('#progress-body').innerHTML = renderEmpty('error', 'Could not load progress', err.message);
+        }
     }
 
     function renderRecent(recent) {
@@ -84,5 +96,9 @@ export function renderExerciseDetail(container, { exerciseId }) {
         `;
     }
 
-    load().catch(err => toast.error(err.message));
+    load().catch(err => {
+        container.querySelector('#exercise-subtitle').textContent = 'Could not load exercise';
+        container.querySelector('#exercise-details').innerHTML = renderEmpty('error', 'Exercise unavailable', err.message);
+        toast.error(err.message);
+    });
 }

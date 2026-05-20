@@ -28,8 +28,11 @@ def _with_image_urls(request: Request, exercise: dict | None) -> dict | None:
     if not exercise:
         return exercise
     base = (settings.public_base_url or str(request.base_url).rstrip("/")).rstrip("/")
+    image_base = settings.free_exercise_db_image_base_url.rstrip("/")
     exercise["image_urls"] = [
-        f"{base}/exercise-images/{quote(path, safe='/')}"
+        f"{image_base}/{quote(path, safe='/')}"
+        if exercise.get("source") == "free_exercise_db"
+        else f"{base}/exercise-images/{quote(path, safe='/')}"
         for path in exercise.get("image_paths", [])
     ]
     return exercise

@@ -30,3 +30,22 @@ class TestUIRoutes:
         assert "x-agent-guidance" in openapi.json()
         assert summary.status_code == 200
         assert "sessions" in summary.json()
+
+    def test_free_exercise_db_images_use_upstream_urls(self, client, db):
+        from workouttracker.repositories.exercises import ExerciseRepository
+
+        repo = ExerciseRepository(db)
+        repo.ensure_fts()
+        eid = repo.create(
+            source="free_exercise_db",
+            source_code="demo",
+            name="Demo Exercise",
+            image_paths='["Demo/0.jpg"]',
+        )
+
+        resp = client.get(f"/exercises/{eid}")
+
+        assert resp.status_code == 200
+        assert resp.json()["image_urls"] == [
+            "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Demo/0.jpg"
+        ]
