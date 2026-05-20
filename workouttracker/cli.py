@@ -29,11 +29,15 @@ def _set_db_env(db_path: str | None) -> Path:
 def _run_schema_setup(db_path: Path) -> None:
     from workouttracker.database import get_connection, init_schema
     from workouttracker.repositories.exercises import ExerciseRepository
+    from workouttracker.services.seed import seed_default_exercises
 
     conn = get_connection(db_path)
     try:
         init_schema(conn)
         ExerciseRepository(conn).ensure_fts()
+        seeded = seed_default_exercises(conn)
+        if seeded:
+            print(f"Seeded {seeded} exercises")
     finally:
         conn.close()
 

@@ -1,6 +1,7 @@
 import pytest
 import sqlite3
 from fastapi.testclient import TestClient
+from workouttracker.config import settings
 from workouttracker.main import app
 from workouttracker.database import init_schema
 from workouttracker.repositories.exercises import ExerciseRepository
@@ -20,5 +21,6 @@ def db():
 @pytest.fixture
 def client(db, monkeypatch):
     monkeypatch.setattr("workouttracker.main.get_connection", lambda *args, **kwargs: db)
+    monkeypatch.setattr(settings, "auto_seed_exercises", False)
     with TestClient(app) as c:
         yield c

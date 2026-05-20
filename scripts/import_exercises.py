@@ -21,23 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from workouttracker.database import get_connection, init_schema
 from workouttracker.repositories.exercises import ExerciseRepository
-
-
-def _normalize_exercise(raw: dict) -> dict:
-    return {
-        "source": "free_exercise_db",
-        "source_code": raw.get("id", ""),
-        "name": raw.get("name", ""),
-        "category": raw.get("category") or None,
-        "equipment": raw.get("equipment") or None,
-        "force": raw.get("force") or None,
-        "level": raw.get("level") or None,
-        "mechanic": raw.get("mechanic") or None,
-        "primary_muscles": json.dumps(raw.get("primaryMuscles", [])),
-        "secondary_muscles": json.dumps(raw.get("secondaryMuscles", [])),
-        "instructions": json.dumps(raw.get("instructions", [])),
-        "image_paths": json.dumps(raw.get("images", [])),
-    }
+from workouttracker.services.seed import _normalize_exercise
 
 
 def _copy_images(image_paths: list[str], images_root: Path, public_images_root: Path) -> int:

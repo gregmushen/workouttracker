@@ -17,6 +17,9 @@ class ExerciseRepository:
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
 
+    def count(self) -> int:
+        return self.conn.execute("SELECT COUNT(*) FROM exercise_templates").fetchone()[0]
+
     def ensure_fts(self):
         self.conn.executescript("""
             CREATE VIRTUAL TABLE IF NOT EXISTS exercise_templates_fts USING fts5(

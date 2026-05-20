@@ -11,6 +11,7 @@ from workouttracker.routes.exercises import router as exercises_router
 from workouttracker.routes.ui import mount_static
 from workouttracker.routes.ui import router as ui_router
 from workouttracker.routes.workouts import router as workouts_router
+from workouttracker.services.seed import seed_default_exercises
 
 
 @asynccontextmanager
@@ -18,6 +19,8 @@ async def lifespan(app: FastAPI):
     conn = get_connection()
     init_schema(conn)
     ExerciseRepository(conn).ensure_fts()
+    if settings.auto_seed_exercises:
+        seed_default_exercises(conn)
     app.state.db = conn
     yield
     conn.close()

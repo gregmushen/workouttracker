@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     api_version: str = "0.1.0"
     bearer_token: Optional[str] = None
     public_base_url: Optional[str] = None
+    auto_seed_exercises: bool = True
 
     model_config = {"env_prefix": "WT_"}
 

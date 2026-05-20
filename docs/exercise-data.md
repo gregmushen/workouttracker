@@ -8,6 +8,8 @@ Workout Tracker can seed its exercise library from `free-exercise-db`.
 - Repository: https://github.com/yuhonas/free-exercise-db
 - License: Unlicense / public domain
 
+Workout Tracker bundles `dist/exercises.json` and the upstream `LICENSE.md`. On first startup, if `exercise_templates` is empty, the app seeds the packaged exercise library automatically. Set `WT_AUTO_SEED_EXERCISES=false` to disable auto-seeding.
+
 Data used:
 
 - exercise names
@@ -105,4 +107,3 @@ export KAMAL_SERVICE="workouttracker"
 export WORKOUTTRACKER_DATA_VOLUME="workouttracker_data"
 export WT_DB_PATH="/data/workout.db"
 ```
-

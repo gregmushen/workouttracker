@@ -453,7 +453,9 @@ Credit:
 - License: Unlicense / public domain
 - Data used: exercise names, categories, equipment, force, level, mechanic, primary/secondary muscles, instructions, and image paths
 
-Download the exercise JSON:
+Workout Tracker bundles `dist/exercises.json` and the upstream `LICENSE.md` so a fresh install starts with a useful library. On first startup, if the exercise table is empty, the app automatically seeds the packaged exercise data. Set `WT_AUTO_SEED_EXERCISES=false` to disable that behavior.
+
+You can still download the latest exercise JSON manually:
 
 ```bash
 mkdir -p data
