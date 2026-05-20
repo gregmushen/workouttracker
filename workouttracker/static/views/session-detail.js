@@ -25,10 +25,28 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
                         <div class="typeahead-menu hidden" id="exercise-suggestions"></div>
                     </div>
                     <div class="form-row">
-                        <div class="field"><label>Weight</label><input class="input" name="weight" type="number" step="0.5"></div>
-                        <div class="field"><label>Reps</label><input class="input" name="reps" type="number" step="1" required></div>
-                        <div class="field"><label>RPE</label><input class="input" name="rpe" type="number" step="0.5"></div>
-                        <div class="field"><label>RIR</label><input class="input" name="rir" type="number" step="0.5"></div>
+                        <div class="field"><label>Weight</label><input class="input" name="weight" type="text" inputmode="decimal" placeholder="135"></div>
+                        <div class="field">
+                            <label>Reps</label>
+                            <input class="input" name="reps" type="text" inputmode="numeric" list="rep-options" placeholder="8" required>
+                            <datalist id="rep-options">
+                                <option value="1"><option value="3"><option value="5"><option value="6"><option value="8"><option value="10"><option value="12"><option value="15">
+                            </datalist>
+                        </div>
+                        <div class="field">
+                            <label>RPE</label>
+                            <input class="input" name="rpe" type="text" inputmode="decimal" list="rpe-options" placeholder="8">
+                            <datalist id="rpe-options">
+                                <option value="6"><option value="6.5"><option value="7"><option value="7.5"><option value="8"><option value="8.5"><option value="9"><option value="9.5"><option value="10">
+                            </datalist>
+                        </div>
+                        <div class="field">
+                            <label>RIR</label>
+                            <input class="input" name="rir" type="text" inputmode="decimal" list="rir-options" placeholder="2">
+                            <datalist id="rir-options">
+                                <option value="0"><option value="1"><option value="2"><option value="3"><option value="4"><option value="5">
+                            </datalist>
+                        </div>
                     </div>
                     <div class="field">
                         <label>Type</label>
@@ -182,6 +200,18 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
         toast.success('Custom exercise created');
     }
 
+    function parseOptionalNumber(value) {
+        const text = String(value || '').trim();
+        if (!text) return undefined;
+        const parsed = Number(text);
+        return Number.isFinite(parsed) ? parsed : NaN;
+    }
+
+    function parseRequiredNumber(value) {
+        const parsed = parseOptionalNumber(value);
+        return parsed === undefined ? NaN : parsed;
+    }
+
     container.querySelector('#set-form').addEventListener('submit', async event => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
@@ -190,13 +220,21 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
             toast.error('Exercise not found');
             return;
         }
+        const weight = parseOptionalNumber(data.get('weight'));
+        const reps = parseRequiredNumber(data.get('reps'));
+        const rpe = parseOptionalNumber(data.get('rpe'));
+        const rir = parseOptionalNumber(data.get('rir'));
+        if ([weight, reps, rpe, rir].some(value => Number.isNaN(value))) {
+            toast.error('Weight, reps, RPE, and RIR must be numbers');
+            return;
+        }
         const body = {
             exercise_template_id: exerciseId,
-            weight: data.get('weight') ? Number(data.get('weight')) : undefined,
-            weight_unit: data.get('weight') ? 'lb' : undefined,
-            reps: Number(data.get('reps')),
-            rpe: data.get('rpe') ? Number(data.get('rpe')) : undefined,
-            rir: data.get('rir') ? Number(data.get('rir')) : undefined,
+            weight,
+            weight_unit: weight !== undefined ? 'lb' : undefined,
+            reps,
+            rpe,
+            rir,
             set_type: data.get('set_type'),
         };
         await postAPI(`/workouts/sessions/${sessionId}/sets`, body);
