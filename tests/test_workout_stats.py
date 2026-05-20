@@ -1,4 +1,4 @@
-from app.services.workout_stats import WorkoutStats
+from workouttracker.services.workout_stats import WorkoutStats
 
 stats = WorkoutStats()
 

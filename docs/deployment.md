@@ -29,7 +29,7 @@ CLOUDFLARE_TUNNEL_TOKEN
 
 Woodpecker runs:
 
-1. `ruff check app/ tests/ scripts/`
+1. `ruff check workouttracker/ tests/ scripts/`
 2. `gitleaks detect`
 3. `pytest tests/ --tb=short -q`
 4. `kamal deploy`

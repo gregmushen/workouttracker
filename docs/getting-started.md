@@ -60,7 +60,7 @@ curl -s http://localhost:8000/health
 
 ```bash
 pytest tests/
-ruff check app scripts tests alembic
+ruff check workouttracker scripts tests alembic
 ```
 
 ## Typical Setup Flow

@@ -552,7 +552,7 @@ alembic upgrade head
 Run the server:
 
 ```bash
-uvicorn app.main:app --reload
+uvicorn workouttracker.main:app --reload
 ```
 
 The FastAPI app serves both the REST API and the vanilla JavaScript UI. API docs remain available at `/docs`, `/redoc`, and `/openapi.json`.
@@ -561,7 +561,7 @@ Run checks:
 
 ```bash
 pytest tests/
-ruff check app scripts tests alembic
+ruff check workouttracker scripts tests alembic
 ```
 
 ## Stack

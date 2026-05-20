@@ -3,8 +3,8 @@ import os
 import tempfile
 from pathlib import Path
 from scripts.import_exercises import import_exercises
-from app.database import get_connection
-from app.repositories.exercises import ExerciseRepository
+from workouttracker.database import get_connection
+from workouttracker.repositories.exercises import ExerciseRepository
 
 SAMPLE = [
     {

@@ -27,11 +27,15 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-workouttracker = "app.cli:main"
+workouttracker = "workouttracker.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["app", "scripts"]
+packages = ["workouttracker", "scripts"]
 artifacts = [
-    "app/static/**/*",
-    "app/templates/**/*",
+    "workouttracker/static/**/*",
+    "workouttracker/templates/**/*",
 ]
+
+[tool.hatch.build.targets.wheel.force-include]
+"alembic" = "alembic"
+"alembic.ini" = "alembic.ini"

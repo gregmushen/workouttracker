@@ -27,8 +27,8 @@ def _set_db_env(db_path: str | None) -> Path:
 
 
 def _run_schema_setup(db_path: Path) -> None:
-    from app.database import get_connection, init_schema
-    from app.repositories.exercises import ExerciseRepository
+    from workouttracker.database import get_connection, init_schema
+    from workouttracker.repositories.exercises import ExerciseRepository
 
     conn = get_connection(db_path)
     try:
@@ -57,7 +57,7 @@ def _cmd_serve(args: argparse.Namespace) -> int:
 
     import uvicorn
 
-    uvicorn.run("app.main:app", host=args.host, port=args.port, reload=args.reload)
+    uvicorn.run("workouttracker.main:app", host=args.host, port=args.port, reload=args.reload)
     return 0
 
 
@@ -89,7 +89,7 @@ def _cmd_version(_: argparse.Namespace) -> int:
     try:
         print(version("workouttracker"))
     except PackageNotFoundError:
-        from app.config import settings
+        from workouttracker.config import settings
 
         print(settings.api_version)
     return 0

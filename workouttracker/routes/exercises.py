@@ -3,15 +3,15 @@ import sqlite3
 from datetime import datetime
 from urllib.parse import quote
 from fastapi import APIRouter, HTTPException, Request
-from app.config import settings
-from app.models.exercise import (
+from workouttracker.config import settings
+from workouttracker.models.exercise import (
     ExerciseCreate, ExerciseUpdate, ExerciseOut, AliasCreate, AliasOut,
     ExerciseResolveRequest, ExerciseResolveResponse,
     ExercisePreferenceCreate, ExercisePreferenceUpdate, ExercisePreferenceOut,
     ExerciseFacets,
 )
-from app.repositories.exercises import ExerciseRepository
-from app.services.exercise_search import ExerciseSearchService
+from workouttracker.repositories.exercises import ExerciseRepository
+from workouttracker.services.exercise_search import ExerciseSearchService
 
 router = APIRouter(prefix="/exercises", tags=["exercises"])
 

@@ -1,5 +1,5 @@
-from app.repositories.exercises import ExerciseRepository
-from app.services.exercise_search import ExerciseSearchService
+from workouttracker.repositories.exercises import ExerciseRepository
+from workouttracker.services.exercise_search import ExerciseSearchService
 
 
 def _seed(db, name, **kwargs):

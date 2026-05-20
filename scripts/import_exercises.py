@@ -19,8 +19,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.database import get_connection, init_schema
-from app.repositories.exercises import ExerciseRepository
+from workouttracker.database import get_connection, init_schema
+from workouttracker.repositories.exercises import ExerciseRepository
 
 
 def _normalize_exercise(raw: dict) -> dict:

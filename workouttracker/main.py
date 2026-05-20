@@ -3,14 +3,14 @@ from pathlib import Path
 from fastapi import Depends, FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
-from app.auth import require_auth
-from app.config import settings
-from app.database import get_connection, init_schema
-from app.repositories.exercises import ExerciseRepository
-from app.routes.exercises import router as exercises_router
-from app.routes.ui import mount_static
-from app.routes.ui import router as ui_router
-from app.routes.workouts import router as workouts_router
+from workouttracker.auth import require_auth
+from workouttracker.config import settings
+from workouttracker.database import get_connection, init_schema
+from workouttracker.repositories.exercises import ExerciseRepository
+from workouttracker.routes.exercises import router as exercises_router
+from workouttracker.routes.ui import mount_static
+from workouttracker.routes.ui import router as ui_router
+from workouttracker.routes.workouts import router as workouts_router
 
 
 @asynccontextmanager

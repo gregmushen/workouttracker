@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app import cli
+from workouttracker import cli
 
 
 def test_cli_help():
@@ -34,7 +34,7 @@ def test_cli_serve_uses_defaults(monkeypatch, tmp_path):
 
     assert cli.main(["serve"]) == 0
     assert Path(tmp_path / "serve.db").exists()
-    assert called["app_path"] == "app.main:app"
+    assert called["app_path"] == "workouttracker.main:app"
     assert called["kwargs"]["host"] == "127.0.0.1"
     assert called["kwargs"]["port"] == 8000
 

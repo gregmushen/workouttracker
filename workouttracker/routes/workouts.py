@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException, Request
-from app.models.workout import (
+from workouttracker.models.workout import (
     WorkoutSessionCreate, WorkoutSessionUpdate, WorkoutSessionOut,
     WorkoutSetCreate, WorkoutSetUpdate, WorkoutSetOut,
     BulkSetIn, SessionCloseIn,
 )
-from app.repositories.workouts import WorkoutRepository
-from app.repositories.exercises import ExerciseRepository
-from app.services.exercise_search import ExerciseSearchService
-from app.services.workout_stats import WorkoutStats
+from workouttracker.repositories.workouts import WorkoutRepository
+from workouttracker.repositories.exercises import ExerciseRepository
+from workouttracker.services.exercise_search import ExerciseSearchService
+from workouttracker.services.workout_stats import WorkoutStats
 
 router = APIRouter(prefix="/workouts", tags=["workouts"])
 

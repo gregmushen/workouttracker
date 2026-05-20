@@ -1,4 +1,4 @@
-from app.repositories.exercises import ExerciseRepository
+from workouttracker.repositories.exercises import ExerciseRepository
 
 
 def _seed(db, name="Bench Press", **kwargs):

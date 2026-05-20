@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-from app.config import settings
+from workouttracker.config import settings
 
 
 def get_connection(db_path: Path | None = None) -> sqlite3.Connection:
