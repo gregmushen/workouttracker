@@ -8,6 +8,15 @@ from pathlib import Path
 
 DEFAULT_DATA_DIR = Path.home() / ".workouttracker"
 DEFAULT_DB_PATH = DEFAULT_DATA_DIR / "workout.db"
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 8000
+_BANNER = r"""
+ __        __         _             _   _____               _
+ \ \      / /__  _ __| | _____  _  | |_|_   _| __ __ _  ___| | _____ _ __
+  \ \ /\ / / _ \| '__| |/ / _ \| | | __| | || '__/ _` |/ __| |/ / _ \ '__|
+   \ V  V / (_) | |  |   < (_) | |_| |_  | || | | (_| | (__|   <  __/ |
+    \_/\_/ \___/|_|  |_|\_\___/ \__|\__| |_||_|  \__,_|\___|_|\_\___|_|
+"""
 
 
 def _set_db_env(db_path: str | None) -> Path:
@@ -35,9 +44,16 @@ def _cmd_serve(args: argparse.Namespace) -> int:
         os.environ["WT_BEARER_TOKEN"] = args.token
     _run_schema_setup(db_path)
 
-    print(f"Workout Tracker serving at http://{args.host}:{args.port}")
+    display_host = "localhost" if args.host in {"0.0.0.0", "127.0.0.1"} else args.host
+    url = f"http://{display_host}:{args.port}"
+    print(_BANNER)
+    print(f"Open in browser: {url}")
     print(f"Database: {db_path}")
-    print(f"OpenAPI: http://{args.host}:{args.port}/openapi.json")
+    print(f"OpenAPI: {url}/openapi.json")
+    if not os.environ.get("WT_BEARER_TOKEN"):
+        print("Auth: disabled. Set WT_BEARER_TOKEN or pass --token to require a bearer token.")
+    print("Press Ctrl+C to stop.")
+    print()
 
     import uvicorn
 
@@ -84,10 +100,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     serve = sub.add_parser("serve", help="Run the Workout Tracker API and web UI")
-    serve.add_argument("--host", default="127.0.0.1")
-    serve.add_argument("--port", type=int, default=8000)
-    serve.add_argument("--db", default=None, help="SQLite database path")
-    serve.add_argument("--token", default=None, help="Bearer token required by the API")
+    serve.add_argument("--host", default=DEFAULT_HOST)
+    serve.add_argument("--port", type=int, default=DEFAULT_PORT)
+    serve.add_argument("--db", default=None, help=f"SQLite database path (default: {DEFAULT_DB_PATH})")
+    serve.add_argument("--token", default=None, help="Bearer token required by the API; omit for local no-auth mode")
     serve.add_argument("--reload", action="store_true", help="Enable uvicorn reload")
     serve.set_defaults(func=_cmd_serve)
 

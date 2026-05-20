@@ -516,7 +516,7 @@ pip install -e ".[dev]"
 Start the packaged app:
 
 ```bash
-workouttracker serve --db ./data/workout.db --token replace-with-a-long-random-token
+workouttracker serve
 ```
 
 Then open:
@@ -528,10 +528,12 @@ http://127.0.0.1:8000
 Useful CLI commands:
 
 ```bash
-workouttracker migrate --db ./data/workout.db
-workouttracker import-exercises /path/to/free-exercise-db/dist/exercises.json --db ./data/workout.db
+workouttracker migrate
+workouttracker import-exercises /path/to/free-exercise-db/dist/exercises.json
 workouttracker version
 ```
+
+By default, the CLI stores data at `~/.workouttracker/workout.db` and runs without auth for local use. Set `WT_BEARER_TOKEN` or pass `--token` to require a bearer token.
 
 Set environment:
 

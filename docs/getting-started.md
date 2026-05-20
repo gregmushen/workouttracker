@@ -17,7 +17,7 @@ pip install -e ".[dev]"
 For a normal local run, use the packaged CLI:
 
 ```bash
-workouttracker serve --db ./data/workout.db --token replace-with-a-long-random-token
+workouttracker serve
 ```
 
 Open the UI at:
@@ -36,16 +36,18 @@ export WT_DB_PATH="./data/workout.db"
 export WT_PUBLIC_BASE_URL="http://localhost:8000"
 ```
 
+Both are optional for local use. Without flags or environment variables, `workouttracker serve` stores data at `~/.workouttracker/workout.db` and runs without auth. Set `WT_BEARER_TOKEN` or pass `--token` when exposing it beyond your own machine.
+
 ## Migrate
 
 ```bash
-workouttracker migrate --db ./data/workout.db
+workouttracker migrate
 ```
 
 ## Run
 
 ```bash
-workouttracker serve --db ./data/workout.db
+workouttracker serve
 ```
 
 Check the API:
