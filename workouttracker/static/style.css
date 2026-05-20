@@ -219,11 +219,6 @@ button, input, select, textarea { font: inherit; }
     background: transparent;
     color: var(--primary);
 }
-.inline-create {
-    width: fit-content;
-    padding: 2px 0;
-    text-align: left;
-}
 .btn-danger { color: var(--error); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
@@ -243,6 +238,57 @@ button, input, select, textarea { font: inherit; }
     padding: 9px 10px;
 }
 .textarea { min-height: 86px; resize: vertical; }
+.typeahead-field {
+    position: relative;
+}
+.typeahead-menu {
+    position: absolute;
+    top: calc(100% - 10px);
+    left: 0;
+    right: 0;
+    z-index: 50;
+    max-height: 300px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+    padding: 6px;
+}
+.typeahead-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    padding: 9px 10px;
+    text-align: left;
+}
+.typeahead-option:hover,
+.typeahead-option:focus {
+    background: var(--surface-hover);
+}
+.typeahead-main {
+    font-weight: 700;
+}
+.typeahead-meta {
+    color: var(--text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+}
+.typeahead-create {
+    justify-content: flex-start;
+    border-top: 1px solid var(--border-light);
+    margin-top: 4px;
+    padding-top: 10px;
+    color: var(--primary);
+    font-weight: 700;
+}
 .quick-log {
     font-family: 'Space Mono', monospace;
     min-height: 112px;

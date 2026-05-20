@@ -19,11 +19,10 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
             <section class="card">
                 <div class="card-header"><div class="card-title">Add Set</div></div>
                 <form class="card-body" id="set-form">
-                    <div class="field">
+                    <div class="field typeahead-field">
                         <label>Exercise</label>
-                        <input class="input" name="exercise" id="exercise-input" list="exercise-suggestions" placeholder="bench press" autocomplete="off" required>
-                        <datalist id="exercise-suggestions"></datalist>
-                        <button class="btn btn-text inline-create hidden" type="button" id="create-exercise"></button>
+                        <input class="input" name="exercise" id="exercise-input" placeholder="bench press" autocomplete="off" required>
+                        <div class="typeahead-menu hidden" id="exercise-suggestions"></div>
                     </div>
                     <div class="form-row">
                         <div class="field"><label>Weight</label><input class="input" name="weight" type="number" step="0.5"></div>
@@ -50,6 +49,7 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
     let session = null;
     let exerciseTimer = null;
     let exerciseSuggestions = new Map();
+    let exerciseSuggestionRows = [];
     let selectedExerciseId = null;
 
     async function load() {
@@ -101,21 +101,35 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
     }
 
     async function updateExerciseSuggestions(query) {
-        const list = container.querySelector('#exercise-suggestions');
-        const createButton = container.querySelector('#create-exercise');
+        const menu = container.querySelector('#exercise-suggestions');
+        const trimmed = query.trim();
         selectedExerciseId = null;
-        if (query.trim().length < 2) {
+        if (trimmed.length < 2) {
             exerciseSuggestions = new Map();
-            list.innerHTML = '';
-            createButton.classList.add('hidden');
+            exerciseSuggestionRows = [];
+            menu.innerHTML = '';
+            menu.classList.add('hidden');
             return;
         }
         const results = await fetchAPI(`/exercises/search?q=${encodeURIComponent(query)}&limit=8`);
+        exerciseSuggestionRows = results;
         exerciseSuggestions = new Map(results.map(ex => [ex.name, ex.id]));
-        list.innerHTML = results.map(ex => `<option value="${esc(ex.name)}"></option>`).join('');
-        const exactMatch = exerciseSuggestions.has(query.trim());
-        createButton.textContent = `Create custom exercise: ${query.trim()}`;
-        createButton.classList.toggle('hidden', exactMatch);
+        const exactMatch = exerciseSuggestions.has(trimmed);
+        menu.innerHTML = `
+            ${results.map(ex => `
+                <button class="typeahead-option" type="button" data-exercise-id="${ex.id}">
+                    <span class="typeahead-main">${esc(ex.name)}</span>
+                    <span class="typeahead-meta">${esc([ex.equipment, (ex.primary_muscles || [])[0]].filter(Boolean).join(' · ') || 'exercise')}</span>
+                </button>
+            `).join('')}
+            ${exactMatch ? '' : `
+                <button class="typeahead-option typeahead-create" type="button" data-create-exercise>
+                    <span class="material-symbols-outlined">add</span>
+                    <span>Create custom exercise: ${esc(trimmed)}</span>
+                </button>
+            `}
+        `;
+        menu.classList.remove('hidden');
     }
 
     container.querySelector('#exercise-input').addEventListener('input', event => {
@@ -126,22 +140,47 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
         }, 160);
     });
 
-    container.querySelector('#create-exercise').addEventListener('click', async () => {
+    container.querySelector('#exercise-suggestions').addEventListener('mousedown', event => {
+        event.preventDefault();
+    });
+
+    container.querySelector('#exercise-suggestions').addEventListener('click', async event => {
+        const option = event.target.closest('[data-exercise-id]');
+        if (option) {
+            const input = container.querySelector('#exercise-input');
+            selectedExerciseId = Number(option.dataset.exerciseId);
+            const match = exerciseSuggestionRows.find(ex => ex.id === selectedExerciseId);
+            const name = match?.name || '';
+            exerciseSuggestions = new Map([[name, selectedExerciseId]]);
+            input.value = name;
+            container.querySelector('#exercise-suggestions').classList.add('hidden');
+            return;
+        }
+        const createOption = event.target.closest('[data-create-exercise]');
+        if (createOption) {
+            await createCustomExercise(container.querySelector('#exercise-input').value);
+        }
+    });
+
+    container.querySelector('#exercise-input').addEventListener('blur', () => {
+        setTimeout(() => container.querySelector('#exercise-suggestions').classList.add('hidden'), 120);
+    });
+
+    async function createCustomExercise(name) {
         const input = container.querySelector('#exercise-input');
-        const name = input.value.trim();
-        if (!name) return;
+        const trimmed = name.trim();
+        if (!trimmed) return;
         const exercise = await postAPI('/exercises', {
             source: 'custom',
-            name,
+            name: trimmed,
             category: 'strength',
         });
         selectedExerciseId = exercise.id;
         exerciseSuggestions = new Map([[exercise.name, exercise.id]]);
         input.value = exercise.name;
-        container.querySelector('#exercise-suggestions').innerHTML = `<option value="${esc(exercise.name)}"></option>`;
-        container.querySelector('#create-exercise').classList.add('hidden');
+        container.querySelector('#exercise-suggestions').classList.add('hidden');
         toast.success('Custom exercise created');
-    });
+    }
 
     container.querySelector('#set-form').addEventListener('submit', async event => {
         event.preventDefault();
@@ -163,9 +202,10 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
         await postAPI(`/workouts/sessions/${sessionId}/sets`, body);
         event.currentTarget.reset();
         exerciseSuggestions = new Map();
+        exerciseSuggestionRows = [];
         selectedExerciseId = null;
         container.querySelector('#exercise-suggestions').innerHTML = '';
-        container.querySelector('#create-exercise').classList.add('hidden');
+        container.querySelector('#exercise-suggestions').classList.add('hidden');
         toast.success('Set added');
         await load();
     });
