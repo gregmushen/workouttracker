@@ -11,7 +11,7 @@ export function renderExercises(container, { navigate }) {
         <div class="page-header">
             <div>
                 <h1 class="page-title">Exercises</h1>
-                <div class="page-subtitle">Search the exercise library and save preferred mappings.</div>
+                <div class="page-subtitle">Search the exercise library and map your own phrases to specific exercises.</div>
             </div>
         </div>
         <section class="card">
@@ -30,6 +30,7 @@ export function renderExercises(container, { navigate }) {
 
     async function search() {
         const q = input.value.trim();
+        const showPreferenceAction = q.length > 0;
         const offset = page * pageSize;
         const results = await fetchAPI(`/exercises/search?q=${encodeURIComponent(q)}&limit=${pageSize}&offset=${offset}`);
         const body = container.querySelector('#exercise-results');
@@ -43,7 +44,14 @@ export function renderExercises(container, { navigate }) {
         }
         body.innerHTML = `
             <table class="table">
-                <thead><tr><th>Name</th><th>Equipment</th><th>Muscles</th><th></th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Equipment</th>
+                        <th>Muscles</th>
+                        ${showPreferenceAction ? '<th class="text-right">Mapping</th>' : ''}
+                    </tr>
+                </thead>
                 <tbody>
                     ${results.map(ex => `
                         <tr class="table-row-link" data-id="${ex.id}">
@@ -58,7 +66,7 @@ export function renderExercises(container, { navigate }) {
                             </td>
                             <td>${esc(ex.equipment || '-')}</td>
                             <td>${esc((ex.primary_muscles || []).join(', ') || '-')}</td>
-                            <td class="text-right"><button class="btn btn-text" data-prefer="${ex.id}" data-name="${esc(ex.name)}">Prefer</button></td>
+                            ${showPreferenceAction ? `<td class="text-right"><button class="btn btn-text" data-prefer="${ex.id}">Map phrase</button></td>` : ''}
                         </tr>
                     `).join('')}
                 </tbody>
@@ -75,11 +83,11 @@ export function renderExercises(container, { navigate }) {
             btn.addEventListener('click', async event => {
                 event.stopPropagation();
                 await postAPI('/exercises/preferences', {
-                    phrase: input.value.trim() || btn.dataset.name,
+                    phrase: input.value.trim(),
                     preferred_exercise_id: Number(btn.dataset.prefer),
                     context: {},
                 });
-                toast.success('Preference saved');
+                toast.success('Exercise mapping saved');
             });
         });
         wirePager(results);
