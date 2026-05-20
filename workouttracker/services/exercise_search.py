@@ -5,13 +5,13 @@ class ExerciseSearchService:
     def __init__(self, repo: ExerciseRepository):
         self.repo = repo
 
-    def search(self, query: str, limit: int = 20, **filters) -> list[dict]:
+    def search(self, query: str, limit: int = 20, offset: int = 0, **filters) -> list[dict]:
         alias_match = self.repo.get_by_alias(query.strip())
-        if alias_match and self._matches_filters(alias_match, filters):
+        if offset == 0 and alias_match and self._matches_filters(alias_match, filters):
             return [alias_match]
         if query.strip():
-            return self.repo.search_fts(query, limit=limit, **filters)
-        return self.repo.list_filtered(limit=limit, **filters)
+            return self.repo.search_fts(query, limit=limit, offset=offset, **filters)
+        return self.repo.list_filtered(limit=limit, offset=offset, **filters)
 
     def resolve(self, query: str) -> dict | None:
         """Return single best match for a query (for bulk set logging)."""

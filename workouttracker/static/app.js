@@ -5,6 +5,7 @@ import { renderSessionDetail } from './views/session-detail.js';
 import { renderExercises } from './views/exercises.js';
 import { renderExerciseDetail } from './views/exercise-detail.js';
 import { renderProgress } from './views/progress.js';
+import { renderRecords } from './views/records.js';
 import { renderSettings } from './views/settings.js';
 
 const app = document.getElementById('app');
@@ -18,6 +19,7 @@ const routes = [
     { pattern: /^\/exercises$/, view: 'exercises' },
     { pattern: /^\/exercise\/(\d+)$/, view: 'exercise-detail' },
     { pattern: /^\/progress$/, view: 'progress' },
+    { pattern: /^\/records$/, view: 'records' },
     { pattern: /^\/settings$/, view: 'settings' },
 ];
 
@@ -55,6 +57,7 @@ function renderSidebar(path) {
         ['/sessions', 'calendar_month', 'Sessions', /^\/sessions/],
         ['/exercises', 'fitness_center', 'Exercises', /^\/exercises/],
         ['/progress', 'monitoring', 'Progress', /^\/progress/],
+        ['/records', 'emoji_events', 'PRs', /^\/records/],
         ['/settings', 'settings', 'Settings', /^\/settings/],
     ];
     return `
@@ -181,6 +184,10 @@ async function render() {
         case 'progress':
             document.title = 'Progress - Workout Tracker';
             renderProgress(view, { navigate });
+            break;
+        case 'records':
+            document.title = 'PRs - Workout Tracker';
+            renderRecords(view, { navigate });
             break;
         default:
             view.innerHTML = `

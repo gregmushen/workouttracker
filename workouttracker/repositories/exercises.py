@@ -141,7 +141,7 @@ class ExerciseRepository:
         ).fetchone()
         return self._row_to_dict(row)
 
-    def search_fts(self, query: str, limit: int = 20, **filters) -> list[dict]:
+    def search_fts(self, query: str, limit: int = 20, offset: int = 0, **filters) -> list[dict]:
         fts_query = " ".join(f"{term}*" for term in query.strip().split())
         where = ["exercise_templates_fts MATCH ?", "e.active = 1"]
         values = [fts_query]
@@ -153,20 +153,20 @@ class ExerciseRepository:
             where.append("(lower(e.primary_muscles) LIKE lower(?) OR lower(e.secondary_muscles) LIKE lower(?))")
             muscle = f"%{filters['muscle']}%"
             values.extend([muscle, muscle])
-        values.append(limit)
+        values.extend([limit, offset])
         try:
             rows = self.conn.execute(
                 """SELECT e.* FROM exercise_templates_fts fts
                    JOIN exercise_templates e ON e.id = fts.rowid
                    WHERE """ + " AND ".join(where) + """
-                   ORDER BY rank LIMIT ?""",
+                   ORDER BY rank LIMIT ? OFFSET ?""",
                 values,
             ).fetchall()
         except Exception:
             return []
         return [self._row_to_dict(r) for r in rows]
 
-    def list_filtered(self, limit: int = 20, **filters) -> list[dict]:
+    def list_filtered(self, limit: int = 20, offset: int = 0, **filters) -> list[dict]:
         where = ["active = 1"]
         values = []
         for field in ("equipment", "category", "level", "mechanic", "force"):
@@ -177,9 +177,9 @@ class ExerciseRepository:
             where.append("(lower(primary_muscles) LIKE lower(?) OR lower(secondary_muscles) LIKE lower(?))")
             muscle = f"%{filters['muscle']}%"
             values.extend([muscle, muscle])
-        values.append(limit)
+        values.extend([limit, offset])
         rows = self.conn.execute(
-            "SELECT * FROM exercise_templates WHERE " + " AND ".join(where) + " ORDER BY name LIMIT ?",
+            "SELECT * FROM exercise_templates WHERE " + " AND ".join(where) + " ORDER BY name LIMIT ? OFFSET ?",
             values,
         ).fetchall()
         return [self._row_to_dict(r) for r in rows]

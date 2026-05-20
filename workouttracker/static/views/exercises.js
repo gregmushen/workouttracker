@@ -3,6 +3,9 @@ import { toast } from '../toast.js';
 import { esc, renderEmpty } from './utils.js';
 
 export function renderExercises(container, { navigate }) {
+    const pageSize = 25;
+    let page = 0;
+
     container.innerHTML = `
         <div class="page-header">
             <div>
@@ -26,10 +29,15 @@ export function renderExercises(container, { navigate }) {
 
     async function search() {
         const q = input.value.trim();
-        const results = await fetchAPI(`/exercises/search?q=${encodeURIComponent(q)}&limit=25`);
+        const offset = page * pageSize;
+        const results = await fetchAPI(`/exercises/search?q=${encodeURIComponent(q)}&limit=${pageSize}&offset=${offset}`);
         const body = container.querySelector('#exercise-results');
         if (!results.length) {
-            body.innerHTML = renderEmpty('search_off', 'No exercises found');
+            body.innerHTML = `
+                ${renderEmpty('search_off', page === 0 ? 'No exercises found' : 'No more exercises')}
+                ${renderPager(results)}
+            `;
+            wirePager(results);
             return;
         }
         body.innerHTML = `
@@ -54,6 +62,7 @@ export function renderExercises(container, { navigate }) {
                     `).join('')}
                 </tbody>
             </table>
+            ${renderPager(results)}
         `;
         body.querySelectorAll('tr[data-id]').forEach(row => {
             row.addEventListener('click', event => {
@@ -72,10 +81,37 @@ export function renderExercises(container, { navigate }) {
                 toast.success('Preference saved');
             });
         });
+        wirePager(results);
+    }
+
+    function renderPager(results) {
+        const start = page * pageSize + 1;
+        const end = page * pageSize + results.length;
+        return `
+            <div class="pager">
+                <span class="pager-label">${results.length ? `${start}-${end}` : `Page ${page + 1}`}</span>
+                <button class="btn" id="prev-page" ${page === 0 ? 'disabled' : ''}>Previous</button>
+                <button class="btn" id="next-page" ${results.length < pageSize ? 'disabled' : ''}>Next</button>
+            </div>
+        `;
+    }
+
+    function wirePager(results) {
+        container.querySelector('#prev-page')?.addEventListener('click', () => {
+            if (page === 0) return;
+            page -= 1;
+            search().catch(err => toast.error(err.message));
+        });
+        container.querySelector('#next-page')?.addEventListener('click', () => {
+            if (results.length < pageSize) return;
+            page += 1;
+            search().catch(err => toast.error(err.message));
+        });
     }
 
     input.addEventListener('input', () => {
         clearTimeout(timer);
+        page = 0;
         timer = setTimeout(() => search().catch(err => toast.error(err.message)), 180);
     });
     search().catch(err => toast.error(err.message));

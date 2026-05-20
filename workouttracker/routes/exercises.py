@@ -40,6 +40,7 @@ def _with_image_urls(request: Request, exercise: dict | None) -> dict | None:
 
 @router.get("/search", response_model=list[ExerciseOut], summary="Search exercises")
 def search_exercises(request: Request, q: str = "", limit: int = 20,
+                     offset: int = 0,
                      equipment: str | None = None, muscle: str | None = None,
                      category: str | None = None, level: str | None = None,
                      mechanic: str | None = None, force: str | None = None):
@@ -48,7 +49,10 @@ def search_exercises(request: Request, q: str = "", limit: int = 20,
         "equipment": equipment, "muscle": muscle, "category": category,
         "level": level, "mechanic": mechanic, "force": force,
     }
-    return [_with_image_urls(request, ex) for ex in _svc(request).search(q, limit=limit, **filters)]
+    return [
+        _with_image_urls(request, ex)
+        for ex in _svc(request).search(q, limit=limit, offset=offset, **filters)
+    ]
 
 
 @router.post("/resolve", response_model=ExerciseResolveResponse, summary="Resolve exercise query")

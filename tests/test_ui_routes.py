@@ -6,7 +6,7 @@ class TestUIRoutes:
         assert "Workout Tracker" in resp.text
 
     def test_client_routes_serve_html(self, client):
-        for path in ["/today", "/sessions", "/sessions/123", "/exercises", "/exercise/123", "/progress", "/settings"]:
+        for path in ["/today", "/sessions", "/sessions/123", "/exercises", "/exercise/123", "/progress", "/records", "/settings"]:
             resp = client.get(path)
             assert resp.status_code == 200
             assert "text/html" in resp.headers["content-type"]

@@ -112,3 +112,5 @@ GET /openapi.json
 The schema includes agent-facing workflow guidance under `x-agent-guidance`.
 
 The same server exposes a lightweight web UI at `/` and `/today`. Agents should continue to use the structured API for writes; the UI is primarily for human review and quick manual logging.
+
+Useful UI routes include `/exercises`, `/progress`, and `/records` for the personal-records table.
