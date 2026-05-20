@@ -300,6 +300,10 @@ button, input, select, textarea { font: inherit; }
     font-family: 'Space Mono', monospace;
     font-size: 12px;
 }
+.pager-input {
+    width: 72px;
+    text-align: center;
+}
 .hidden { display: none !important; }
 
 .auth-shell {

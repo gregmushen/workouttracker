@@ -4,6 +4,7 @@ import { esc, renderEmpty } from './utils.js';
 
 export function renderExercises(container, { navigate }) {
     const pageSize = 25;
+    const totalExercises = 873;
     let page = 0;
 
     container.innerHTML = `
@@ -90,13 +91,20 @@ export function renderExercises(container, { navigate }) {
         return `
             <div class="pager">
                 <span class="pager-label">${results.length ? `${start}-${end}` : `Page ${page + 1}`}</span>
+                <button class="btn" id="first-page" ${page === 0 ? 'disabled' : ''}>First</button>
                 <button class="btn" id="prev-page" ${page === 0 ? 'disabled' : ''}>Previous</button>
+                <input class="input pager-input" id="page-input" type="number" min="1" value="${page + 1}" aria-label="Page number">
                 <button class="btn" id="next-page" ${results.length < pageSize ? 'disabled' : ''}>Next</button>
+                <button class="btn" id="last-page">Last</button>
             </div>
         `;
     }
 
     function wirePager(results) {
+        container.querySelector('#first-page')?.addEventListener('click', () => {
+            page = 0;
+            search().catch(err => toast.error(err.message));
+        });
         container.querySelector('#prev-page')?.addEventListener('click', () => {
             if (page === 0) return;
             page -= 1;
@@ -105,6 +113,16 @@ export function renderExercises(container, { navigate }) {
         container.querySelector('#next-page')?.addEventListener('click', () => {
             if (results.length < pageSize) return;
             page += 1;
+            search().catch(err => toast.error(err.message));
+        });
+        container.querySelector('#last-page')?.addEventListener('click', () => {
+            page = Math.floor((totalExercises - 1) / pageSize);
+            search().catch(err => toast.error(err.message));
+        });
+        container.querySelector('#page-input')?.addEventListener('change', event => {
+            const nextPage = Number(event.target.value);
+            if (!Number.isFinite(nextPage) || nextPage < 1) return;
+            page = Math.max(0, Math.floor(nextPage) - 1);
             search().catch(err => toast.error(err.message));
         });
     }
