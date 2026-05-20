@@ -23,6 +23,7 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
                         <label>Exercise</label>
                         <input class="input" name="exercise" id="exercise-input" list="exercise-suggestions" placeholder="bench press" autocomplete="off" required>
                         <datalist id="exercise-suggestions"></datalist>
+                        <button class="btn btn-text inline-create hidden" type="button" id="create-exercise"></button>
                     </div>
                     <div class="form-row">
                         <div class="field"><label>Weight</label><input class="input" name="weight" type="number" step="0.5"></div>
@@ -49,6 +50,7 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
     let session = null;
     let exerciseTimer = null;
     let exerciseSuggestions = new Map();
+    let selectedExerciseId = null;
 
     async function load() {
         session = await fetchAPI(`/workouts/sessions/${sessionId}`);
@@ -84,6 +86,9 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
     }
 
     async function resolveExercise(query) {
+        if (selectedExerciseId && exerciseSuggestions.get(query) === selectedExerciseId) {
+            return selectedExerciseId;
+        }
         const selectedId = exerciseSuggestions.get(query);
         if (selectedId) {
             return selectedId;
@@ -97,14 +102,20 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
 
     async function updateExerciseSuggestions(query) {
         const list = container.querySelector('#exercise-suggestions');
+        const createButton = container.querySelector('#create-exercise');
+        selectedExerciseId = null;
         if (query.trim().length < 2) {
             exerciseSuggestions = new Map();
             list.innerHTML = '';
+            createButton.classList.add('hidden');
             return;
         }
         const results = await fetchAPI(`/exercises/search?q=${encodeURIComponent(query)}&limit=8`);
         exerciseSuggestions = new Map(results.map(ex => [ex.name, ex.id]));
         list.innerHTML = results.map(ex => `<option value="${esc(ex.name)}"></option>`).join('');
+        const exactMatch = exerciseSuggestions.has(query.trim());
+        createButton.textContent = `Create custom exercise: ${query.trim()}`;
+        createButton.classList.toggle('hidden', exactMatch);
     }
 
     container.querySelector('#exercise-input').addEventListener('input', event => {
@@ -113,6 +124,23 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
         exerciseTimer = setTimeout(() => {
             updateExerciseSuggestions(query).catch(err => toast.error(err.message));
         }, 160);
+    });
+
+    container.querySelector('#create-exercise').addEventListener('click', async () => {
+        const input = container.querySelector('#exercise-input');
+        const name = input.value.trim();
+        if (!name) return;
+        const exercise = await postAPI('/exercises', {
+            source: 'custom',
+            name,
+            category: 'strength',
+        });
+        selectedExerciseId = exercise.id;
+        exerciseSuggestions = new Map([[exercise.name, exercise.id]]);
+        input.value = exercise.name;
+        container.querySelector('#exercise-suggestions').innerHTML = `<option value="${esc(exercise.name)}"></option>`;
+        container.querySelector('#create-exercise').classList.add('hidden');
+        toast.success('Custom exercise created');
     });
 
     container.querySelector('#set-form').addEventListener('submit', async event => {
@@ -135,7 +163,9 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
         await postAPI(`/workouts/sessions/${sessionId}/sets`, body);
         event.currentTarget.reset();
         exerciseSuggestions = new Map();
+        selectedExerciseId = null;
         container.querySelector('#exercise-suggestions').innerHTML = '';
+        container.querySelector('#create-exercise').classList.add('hidden');
         toast.success('Set added');
         await load();
     });

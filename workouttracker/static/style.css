@@ -219,6 +219,11 @@ button, input, select, textarea { font: inherit; }
     background: transparent;
     color: var(--primary);
 }
+.inline-create {
+    width: fit-content;
+    padding: 2px 0;
+    text-align: left;
+}
 .btn-danger { color: var(--error); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
