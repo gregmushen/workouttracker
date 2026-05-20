@@ -21,7 +21,8 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
                 <form class="card-body" id="set-form">
                     <div class="field">
                         <label>Exercise</label>
-                        <input class="input" name="exercise" placeholder="bench press" required>
+                        <input class="input" name="exercise" id="exercise-input" list="exercise-suggestions" placeholder="bench press" autocomplete="off" required>
+                        <datalist id="exercise-suggestions"></datalist>
                     </div>
                     <div class="form-row">
                         <div class="field"><label>Weight</label><input class="input" name="weight" type="number" step="0.5"></div>
@@ -46,6 +47,8 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
     `;
 
     let session = null;
+    let exerciseTimer = null;
+    let exerciseSuggestions = new Map();
 
     async function load() {
         session = await fetchAPI(`/workouts/sessions/${sessionId}`);
@@ -80,16 +83,48 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
         });
     }
 
+    async function resolveExercise(query) {
+        const selectedId = exerciseSuggestions.get(query);
+        if (selectedId) {
+            return selectedId;
+        }
+        const resolved = await postAPI('/exercises/resolve', { query });
+        if (!resolved.best_match) {
+            return null;
+        }
+        return resolved.best_match.id;
+    }
+
+    async function updateExerciseSuggestions(query) {
+        const list = container.querySelector('#exercise-suggestions');
+        if (query.trim().length < 2) {
+            exerciseSuggestions = new Map();
+            list.innerHTML = '';
+            return;
+        }
+        const results = await fetchAPI(`/exercises/search?q=${encodeURIComponent(query)}&limit=8`);
+        exerciseSuggestions = new Map(results.map(ex => [ex.name, ex.id]));
+        list.innerHTML = results.map(ex => `<option value="${esc(ex.name)}"></option>`).join('');
+    }
+
+    container.querySelector('#exercise-input').addEventListener('input', event => {
+        clearTimeout(exerciseTimer);
+        const query = event.target.value;
+        exerciseTimer = setTimeout(() => {
+            updateExerciseSuggestions(query).catch(err => toast.error(err.message));
+        }, 160);
+    });
+
     container.querySelector('#set-form').addEventListener('submit', async event => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        const resolved = await postAPI('/exercises/resolve', { query: data.get('exercise') });
-        if (!resolved.best_match) {
+        const exerciseId = await resolveExercise(String(data.get('exercise') || ''));
+        if (!exerciseId) {
             toast.error('Exercise not found');
             return;
         }
         const body = {
-            exercise_template_id: resolved.best_match.id,
+            exercise_template_id: exerciseId,
             weight: data.get('weight') ? Number(data.get('weight')) : undefined,
             weight_unit: data.get('weight') ? 'lb' : undefined,
             reps: Number(data.get('reps')),
@@ -99,6 +134,8 @@ export function renderSessionDetail(container, { sessionId, navigate }) {
         };
         await postAPI(`/workouts/sessions/${sessionId}/sets`, body);
         event.currentTarget.reset();
+        exerciseSuggestions = new Map();
+        container.querySelector('#exercise-suggestions').innerHTML = '';
         toast.success('Set added');
         await load();
     });
