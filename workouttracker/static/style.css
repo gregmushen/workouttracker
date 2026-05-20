@@ -263,14 +263,48 @@ button, input, select, textarea { font: inherit; }
 .badge-green { color: #0b7a35; background: rgba(34,197,94,0.14); }
 .badge-red { color: var(--error); background: rgba(186,26,26,0.12); }
 .exercise-thumb {
-    width: 54px;
-    height: 54px;
+    width: 72px;
+    height: 72px;
     object-fit: cover;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-light);
     background: var(--surface-hover);
 }
 .exercise-row { display: flex; align-items: center; gap: 12px; }
+.exercise-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+.exercise-gallery-item {
+    position: relative;
+    margin: 0;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    background: var(--surface-hover);
+    overflow: hidden;
+}
+.exercise-gallery-item img {
+    display: block;
+    width: 100%;
+    height: 260px;
+    object-fit: contain;
+}
+.exercise-gallery-item figcaption {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--surface);
+    background: rgba(0, 0, 0, 0.68);
+}
 .empty-state {
     display: flex;
     flex-direction: column;

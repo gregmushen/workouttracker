@@ -32,7 +32,7 @@ export function renderExerciseDetail(container, { exerciseId }) {
         container.querySelector('#exercise-subtitle').textContent = [exercise.category, exercise.equipment, exercise.level].filter(Boolean).join(' - ');
         container.querySelector('#exercise-details').innerHTML = `
             <div class="grid">
-                ${exercise.image_urls?.[0] ? `<img src="${esc(exercise.image_urls[0])}" alt="" style="width:100%;max-height:280px;object-fit:contain;border:1px solid var(--border-light);border-radius:var(--radius-sm);background:var(--surface-hover)">` : ''}
+                ${renderImageGallery(exercise.image_urls || [])}
                 <div><span class="pill">${esc(exercise.category || 'uncategorized')}</span> <span class="pill">${esc(exercise.equipment || 'equipment unknown')}</span></div>
                 <div><strong>Primary:</strong> ${esc((exercise.primary_muscles || []).join(', ') || '-')}</div>
                 <div><strong>Secondary:</strong> ${esc((exercise.secondary_muscles || []).join(', ') || '-')}</div>
@@ -41,6 +41,20 @@ export function renderExerciseDetail(container, { exerciseId }) {
         `;
         loadRecent();
         loadProgress();
+    }
+
+    function renderImageGallery(imageUrls) {
+        if (!imageUrls.length) return '';
+        return `
+            <div class="exercise-gallery">
+                ${imageUrls.map((url, index) => `
+                    <figure class="exercise-gallery-item">
+                        <img src="${esc(url)}" alt="">
+                        <figcaption>${index + 1}</figcaption>
+                    </figure>
+                `).join('')}
+            </div>
+        `;
     }
 
     async function loadRecent() {
