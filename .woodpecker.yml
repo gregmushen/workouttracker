@@ -38,6 +38,7 @@ steps:
       - echo "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
       - chmod 600 ~/.ssh/deploy_key
       - printf "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n" > ~/.ssh/config
+      - mkdir -p .kamal
       - printf "WT_BEARER_TOKEN=%s\nTUNNEL_TOKEN=%s\nKAMAL_REGISTRY_PASSWORD=%s\n" "$WT_BEARER_TOKEN" "$CLOUDFLARE_TUNNEL_TOKEN" "$KAMAL_REGISTRY_PASSWORD" > .kamal/secrets
       - kamal deploy
       - kamal accessory boot cloudflared 2>/dev/null || kamal accessory reboot cloudflared
