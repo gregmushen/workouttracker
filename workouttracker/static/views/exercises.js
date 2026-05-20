@@ -43,7 +43,7 @@ export function renderExercises(container, { navigate }) {
             return;
         }
         body.innerHTML = `
-            <table class="table">
+            <table class="table exercise-table">
                 <thead>
                     <tr>
                         <th>Name</th>

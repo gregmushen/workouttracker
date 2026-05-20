@@ -262,9 +262,19 @@ button, input, select, textarea { font: inherit; }
 }
 .badge-green { color: #0b7a35; background: rgba(34,197,94,0.14); }
 .badge-red { color: var(--error); background: rgba(186,26,26,0.12); }
+.exercise-table th:first-child,
+.exercise-table td:first-child {
+    width: 48%;
+}
+.exercise-table td {
+    padding-top: 14px;
+    padding-bottom: 14px;
+    vertical-align: middle;
+}
 .exercise-thumb {
-    width: 72px;
-    height: 72px;
+    flex: 0 0 112px;
+    width: 112px;
+    height: 84px;
     object-fit: cover;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-light);
