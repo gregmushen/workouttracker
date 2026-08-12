@@ -1,0 +1,133 @@
+name: CI
+
+# Ported from .woodpecker.yml. Same four gates in the same order:
+# ruff, gitleaks, pytest, then Kamal deploy on master only.
+#
+# Runs on the self-hosted runner on garageband (192.168.60.55) — the same host
+# Kamal deploys to. Steps run in containers so the host keeps no Python or Ruby
+# toolchain, matching how Woodpecker did it.
+
+on:
+  push:
+    branches: [master]
+    tags: ["*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # A second push while a deploy is mid-flight would race Kamal on the same host.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  lint:
+    runs-on: [self-hosted, garageband]
+    container: python:3.12-slim
+    steps:
+      - uses: actions/checkout@v4
+      # Pinned deliberately: an unpinned ruff can introduce new rules on release
+      # and turn the pipeline red with no code change.
+      - run: pip install 'ruff==0.16.1'
+      # The package is workouttracker/, not app/. The Woodpecker config still
+      # said app/ after the rename in 68794c2, which failed the whole pipeline
+      # on every push and silently blocked every deploy since.
+      - run: ruff check workouttracker/ tests/ scripts/
+
+  secret-scan:
+    runs-on: [self-hosted, garageband]
+    container: zricethezav/gitleaks:latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # gitleaks scans history; a shallow clone would silently skip commits.
+          fetch-depth: 0
+      - run: gitleaks detect --source . --verbose --no-banner
+
+  test:
+    runs-on: [self-hosted, garageband]
+    container: python:3.12-slim
+    needs: [lint, secret-scan]
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -e ".[dev]"
+      - run: pytest tests/ --tb=short -q
+
+  deploy:
+    runs-on: [self-hosted, garageband]
+    needs: [test]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    container:
+      image: ruby:3.3-alpine
+      # Kamal builds and pushes images through the host Docker daemon.
+      options: -v /var/run/docker.sock:/var/run/docker.sock
+    env:
+      # Non-secret deploy targets. config/deploy.yml reads these via ENV.fetch,
+      # whose fallbacks (127.0.0.1, registry.example.com) are placeholders that
+      # would deploy to the wrong place if these were ever dropped.
+      DEPLOY_HOST: 192.168.60.55
+      DEPLOY_USER: gregmushen
+      REGISTRY_SERVER: 192.168.60.55:5000
+      REGISTRY_USERNAME: kamal
+      APP_HOST: wt.paracosmlab.com
+      KAMAL_BUILDER_DRIVER: docker
+    steps:
+      # git must exist BEFORE checkout. Without it actions/checkout falls back to
+      # a tarball download, leaving no .git directory — and Kamal derives its
+      # release version from the commit hash, so it fails with "no git repository".
+      - name: Install git before checkout
+        run: apk add --no-cache git
+
+      - uses: actions/checkout@v4
+
+      - name: Trust the checkout directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Install Kamal and deploy tooling
+        run: |
+          apk add --no-cache openssh-client curl docker-cli docker-cli-buildx build-base
+          gem install kamal --no-document -q
+
+      - name: Configure SSH and secrets
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          WT_BEARER_TOKEN: ${{ secrets.WT_BEARER_TOKEN }}
+          CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+          KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
+        run: |
+          mkdir -p ~/.ssh .kamal
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf 'Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n' > ~/.ssh/config
+          printf 'WT_BEARER_TOKEN=%s\nTUNNEL_TOKEN=%s\nKAMAL_REGISTRY_PASSWORD=%s\n' \
+            "$WT_BEARER_TOKEN" "$CLOUDFLARE_TUNNEL_TOKEN" "$KAMAL_REGISTRY_PASSWORD" > .kamal/secrets
+
+      - name: Deploy
+        run: kamal deploy
+
+      - name: Ensure the Cloudflare tunnel accessory is running
+        run: kamal accessory boot cloudflared 2>/dev/null || kamal accessory reboot cloudflared
+
+      - name: Verify the deployed service is healthy
+        run: |
+          for _ in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://wt.paracosmlab.com/health || true)
+            if [ "$code" = "200" ]; then
+              echo "health: 200"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "service did not return healthy after deploy"
+          exit 1
+
+      # The migration this deploy ships adds the cardio columns. Confirm the
+      # running API actually serves them, so a silently-skipped migration or a
+      # stale image surfaces here instead of on first use.
+      - name: Verify the cardio fields are live
+        run: |
+          if curl -s https://wt.paracosmlab.com/openapi.json | grep -q 'avg_heart_rate_bpm'; then
+            echo "cardio fields present"
+          else
+            echo "cardio fields MISSING from deployed schema"
+            exit 1
+          fi

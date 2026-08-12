@@ -1,0 +1,6 @@
+# Labels for the self-hosted runner on garageband (192.168.60.55). Without
+# these, actionlint flags `runs-on: [self-hosted, garageband]` as an unknown
+# label, which buries real findings in noise.
+self-hosted-runner:
+  labels:
+    - garageband
