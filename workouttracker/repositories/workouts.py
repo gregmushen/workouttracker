@@ -75,6 +75,8 @@ class WorkoutRepository:
         values = [session_id, exercise_template_id, set_number]
         optional = ["set_type", "weight", "weight_unit", "reps", "duration_seconds",
                     "distance", "distance_unit", "rpe", "rir", "rest_seconds",
+                    "avg_watts", "avg_heart_rate_bpm", "max_heart_rate_bpm",
+                    "calories_kcal", "avg_cadence_rpm",
                     "notes", "performed_at"]
         for f in optional:
             if f in kwargs and kwargs[f] is not None:

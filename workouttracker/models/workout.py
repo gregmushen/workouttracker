@@ -72,6 +72,11 @@ class WorkoutSetCreate(BaseModel):
     rpe: float | None = None
     rir: float | None = None
     rest_seconds: int | None = None
+    avg_watts: float | None = None
+    avg_heart_rate_bpm: int | None = None
+    max_heart_rate_bpm: int | None = None
+    calories_kcal: float | None = None
+    avg_cadence_rpm: float | None = None
     notes: str | None = None
     performed_at: str | None = None
 
@@ -95,6 +100,11 @@ class WorkoutSetUpdate(BaseModel):
     rpe: float | None = None
     rir: float | None = None
     rest_seconds: int | None = None
+    avg_watts: float | None = None
+    avg_heart_rate_bpm: int | None = None
+    max_heart_rate_bpm: int | None = None
+    calories_kcal: float | None = None
+    avg_cadence_rpm: float | None = None
     notes: str | None = None
 
 
@@ -113,6 +123,11 @@ class WorkoutSetOut(BaseModel):
     rpe: float | None = None
     rir: float | None = None
     rest_seconds: int | None = None
+    avg_watts: float | None = None
+    avg_heart_rate_bpm: int | None = None
+    max_heart_rate_bpm: int | None = None
+    calories_kcal: float | None = None
+    avg_cadence_rpm: float | None = None
     notes: str | None = None
     performed_at: str | None = None
     created_at: datetime
@@ -131,6 +146,11 @@ class BulkSetItem(BaseModel):
     duration_seconds: int | None = None
     rpe: float | None = None
     rir: float | None = None
+    avg_watts: float | None = None
+    avg_heart_rate_bpm: int | None = None
+    max_heart_rate_bpm: int | None = None
+    calories_kcal: float | None = None
+    avg_cadence_rpm: float | None = None
     notes: str | None = None
 
     @model_validator(mode="after")
