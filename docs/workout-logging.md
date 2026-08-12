@@ -68,6 +68,11 @@ Set fields:
 - `rpe`
 - `rir`
 - `rest_seconds`
+- `avg_watts`
+- `avg_heart_rate_bpm`
+- `max_heart_rate_bpm`
+- `calories_kcal`
+- `avg_cadence_rpm`
 - `notes`
 - `performed_at`
 
@@ -95,6 +100,25 @@ Examples:
 {"set_type": "amrap", "weight": 135, "weight_unit": "lb", "reps": 13, "rpe": 10}
 {"set_type": "timed", "duration_seconds": 60, "notes": "plank"}
 {"set_type": "bodyweight", "reps": 10}
+```
+
+## Cardio Metrics
+
+Timed cardio sets (indoor cycling, rowing, treadmill) accept structured metrics
+instead of stuffing them into `notes`. All are optional and nullable.
+
+| Field | Meaning |
+| --- | --- |
+| `avg_watts` | Average power output in watts |
+| `avg_heart_rate_bpm` | Average heart rate |
+| `max_heart_rate_bpm` | Peak heart rate |
+| `calories_kcal` | Bike-reported or user-entered calories (never calculated) |
+| `avg_cadence_rpm` | Average cycling cadence |
+
+```json
+{"set_type": "timed", "duration_seconds": 3600, "avg_watts": 60,
+ "avg_heart_rate_bpm": 120, "max_heart_rate_bpm": 135,
+ "calories_kcal": 225, "avg_cadence_rpm": 82, "rpe": 4}
 ```
 
 ## RPE

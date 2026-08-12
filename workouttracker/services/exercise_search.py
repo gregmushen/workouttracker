@@ -9,6 +9,12 @@ class ExerciseSearchService:
         alias_match = self.repo.get_by_alias(query.strip())
         if offset == 0 and alias_match and self._matches_filters(alias_match, filters):
             return [alias_match]
+        # An exact name is an unambiguous answer, so it outranks whatever the
+        # full-text ranking would surface (e.g. "Bicycling, Stationary" must not
+        # lose to "Bicycling, Mountain").
+        exact_name = self.repo.get_by_normalized_name(query.strip())
+        if offset == 0 and exact_name and self._matches_filters(exact_name, filters):
+            return [exact_name]
         if query.strip():
             return self.repo.search_fts(query, limit=limit, offset=offset, **filters)
         return self.repo.list_filtered(limit=limit, offset=offset, **filters)

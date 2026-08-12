@@ -128,6 +128,18 @@ Examples:
 {"set_type": "bodyweight", "reps": 10}
 ```
 
+## Cardio Metrics
+
+Timed cardio sets accept structured metrics — `avg_watts`, `avg_heart_rate_bpm`,
+`max_heart_rate_bpm`, `calories_kcal`, and `avg_cadence_rpm`. All are optional
+and nullable, on both single and bulk set logging. Calories are stored as
+reported; nothing is calculated.
+
+```json
+{"set_type": "timed", "duration_seconds": 3600, "avg_watts": 60,
+ "avg_heart_rate_bpm": 120, "calories_kcal": 225, "notes": "easy zone 2"}
+```
+
 ## API
 
 All endpoints except `/health` require:

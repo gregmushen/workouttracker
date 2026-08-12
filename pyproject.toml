@@ -22,6 +22,14 @@ dev = [
     "ruff>=0.4",
 ]
 
+[tool.ruff.lint]
+# Stated explicitly rather than inherited from whatever ruff's defaults happen
+# to be. There was no config here, so the rule set moved with the installed
+# version: ruff 0.16 widened its defaults and turned this tree red (18 findings)
+# with no code change, while 0.15 passed. These are ruff's historical defaults —
+# widening the set is a deliberate cleanup, not something a CI upgrade decides.
+select = ["E4", "E7", "E9", "F"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

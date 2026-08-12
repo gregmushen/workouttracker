@@ -107,6 +107,11 @@ def init_schema(conn: sqlite3.Connection) -> None:
             rpe REAL,
             rir REAL,
             rest_seconds INTEGER,
+            avg_watts REAL,
+            avg_heart_rate_bpm INTEGER,
+            max_heart_rate_bpm INTEGER,
+            calories_kcal REAL,
+            avg_cadence_rpm REAL,
             notes TEXT,
             performed_at TEXT,
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -135,6 +140,11 @@ def init_schema(conn: sqlite3.Connection) -> None:
     _ensure_column(conn, "exercise_aliases", "normalized_alias", "TEXT NOT NULL DEFAULT ''")
     _ensure_column(conn, "exercise_aliases", "source", "TEXT NOT NULL DEFAULT 'user'")
     _ensure_column(conn, "exercise_aliases", "confidence", "REAL NOT NULL DEFAULT 1.0")
+    _ensure_column(conn, "workout_sets", "avg_watts", "REAL")
+    _ensure_column(conn, "workout_sets", "avg_heart_rate_bpm", "INTEGER")
+    _ensure_column(conn, "workout_sets", "max_heart_rate_bpm", "INTEGER")
+    _ensure_column(conn, "workout_sets", "calories_kcal", "REAL")
+    _ensure_column(conn, "workout_sets", "avg_cadence_rpm", "REAL")
     conn.execute(
         "UPDATE exercise_aliases SET normalized_alias = lower(trim(alias)) WHERE normalized_alias = ''"
     )

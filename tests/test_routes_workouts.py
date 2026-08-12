@@ -102,6 +102,110 @@ def test_bulk_sets_unknown_exercise(client, db):
     assert r.status_code == 404
 
 
+# --- Cardio metrics ---
+
+CARDIO_METRICS = {
+    "avg_watts": 60,
+    "avg_heart_rate_bpm": 120,
+    "max_heart_rate_bpm": 135,
+    "calories_kcal": 225,
+    "avg_cadence_rpm": 82,
+}
+
+
+def test_create_set_with_cardio_metrics(client, db):
+    eid = _exercise(db, "Bicycling, Stationary")
+    sid = _session(client)
+    r = client.post(f"/workouts/sessions/{sid}/sets", json={
+        "exercise_template_id": eid,
+        "set_type": "timed",
+        "duration_seconds": 3600,
+        "notes": "easy zone 2",
+        **CARDIO_METRICS,
+    })
+    assert r.status_code == 201
+    body = r.json()
+    for field, value in CARDIO_METRICS.items():
+        assert body[field] == value
+
+
+def test_create_set_without_cardio_metrics_returns_nulls(client, db):
+    eid = _exercise(db)
+    sid = _session(client)
+    r = client.post(f"/workouts/sessions/{sid}/sets", json={
+        "exercise_template_id": eid, "weight": 135,
+        "weight_unit": "lb", "reps": 8, "set_type": "working",
+    })
+    assert r.status_code == 201
+    for field in CARDIO_METRICS:
+        assert r.json()[field] is None
+
+
+def test_update_set_with_cardio_metrics(client, db):
+    eid = _exercise(db, "Bicycling, Stationary")
+    sid = _session(client)
+    set_id = client.post(f"/workouts/sessions/{sid}/sets", json={
+        "exercise_template_id": eid, "set_type": "timed", "duration_seconds": 1800,
+    }).json()["id"]
+    r = client.patch(f"/workouts/sets/{set_id}", json=CARDIO_METRICS)
+    assert r.status_code == 200
+    for field, value in CARDIO_METRICS.items():
+        assert r.json()[field] == value
+
+
+def test_update_set_clears_cardio_metric(client, db):
+    eid = _exercise(db, "Bicycling, Stationary")
+    sid = _session(client)
+    set_id = client.post(f"/workouts/sessions/{sid}/sets", json={
+        "exercise_template_id": eid, "set_type": "timed",
+        "duration_seconds": 1800, "avg_watts": 60,
+    }).json()["id"]
+    r = client.patch(f"/workouts/sets/{set_id}", json={"avg_watts": None})
+    assert r.status_code == 200
+    assert r.json()["avg_watts"] is None
+
+
+def test_bulk_create_sets_with_cardio_metrics(client, db):
+    eid = _exercise(db, "Bicycling, Stationary")
+    ExerciseRepository(db).add_alias(eid, "stationary bike")
+    sid = _session(client)
+    r = client.post(f"/workouts/sessions/{sid}/sets/bulk", json={
+        "exercise_query": "stationary bike",
+        "sets": [
+            {"set_type": "timed", "duration_seconds": 1800, **CARDIO_METRICS},
+            {"set_type": "timed", "duration_seconds": 900, "avg_watts": 90},
+        ],
+    })
+    assert r.status_code == 201
+    assert r.json()[0]["avg_heart_rate_bpm"] == 120
+    assert r.json()[1]["avg_watts"] == 90
+    assert r.json()[1]["avg_heart_rate_bpm"] is None
+
+
+def test_list_sets_includes_cardio_metrics(client, db):
+    eid = _exercise(db, "Bicycling, Stationary")
+    sid = _session(client)
+    client.post(f"/workouts/sessions/{sid}/sets", json={
+        "exercise_template_id": eid, "set_type": "timed",
+        "duration_seconds": 3600, **CARDIO_METRICS,
+    })
+    r = client.get(f"/workouts/sessions/{sid}/sets")
+    assert r.status_code == 200
+    assert r.json()[0]["avg_watts"] == 60
+
+
+def test_recent_includes_cardio_metrics(client, db):
+    eid = _exercise(db, "Bicycling, Stationary")
+    sid = _session(client)
+    client.post(f"/workouts/sessions/{sid}/sets", json={
+        "exercise_template_id": eid, "set_type": "timed",
+        "duration_seconds": 3600, **CARDIO_METRICS,
+    })
+    r = client.get(f"/workouts/recent?exercise_id={eid}")
+    assert r.status_code == 200
+    assert r.json()["sessions"][0]["sets"][0]["calories_kcal"] == 225
+
+
 def test_recent(client, db):
     eid = _exercise(db)
     sid = _session(client)
