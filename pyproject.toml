@@ -25,6 +25,40 @@ dev = [
     "ruff==0.16.1",
 ]
 
+[tool.ruff.lint]
+# Added on top of ruff's defaults, not instead of them. Most of these families
+# are already clean here — enabling them costs nothing today and stops the
+# corresponding mistakes from landing later, which is the point.
+#
+# Deliberately NOT enabled:
+#   COM, ISC  — trailing-comma and implicit-concat rules fight a formatter;
+#               ruff itself flags them as redundant when `ruff format` is used.
+#   EM        — forcing exception messages into temporary variables adds noise
+#               without making failures easier to diagnose.
+#   ARG       — flags framework-mandated signatures: pytest fixtures requested
+#               for their side effect (the `db` args) and FastAPI's catch-all
+#               `path` param. Both are correct code the rule cannot see into.
+extend-select = [
+    "A",    # builtin shadowing
+    "C4",   # comprehension rewrites
+    "ERA",  # commented-out code
+    "G",    # logging format
+    "ICN",  # import conventions
+    "INP",  # implicit namespace packages
+    "N",    # pep8 naming
+    "PIE",  # misc lints
+    "PT",   # pytest style
+    "PTH",  # pathlib over os.path
+    "Q",    # quote consistency
+    "RET",  # return simplification
+    "RSE",  # raise cleanups
+    "RUF",  # ruff-specific
+    "SIM",  # simplification
+    "SLF",  # private member access
+    "TC",   # typing-only imports
+    "TID",  # tidy imports
+]
+
 [tool.ruff.lint.flake8-bugbear]
 # FastAPI's dependency injection is expressed as a call in an argument default;
 # Security(_bearer) is the documented idiom, not the mutable-default trap B008

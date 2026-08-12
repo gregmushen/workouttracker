@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import json
 from importlib import resources
-from sqlite3 import Connection
+from typing import TYPE_CHECKING
 
 from workouttracker.repositories.exercises import ExerciseRepository
+
+if TYPE_CHECKING:
+    from sqlite3 import Connection
 
 
 def _normalize_exercise(raw: dict) -> dict:

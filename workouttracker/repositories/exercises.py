@@ -1,3 +1,4 @@
+import contextlib
 import json
 import sqlite3
 
@@ -212,7 +213,7 @@ class ExerciseRepository:
         if "name" in kwargs:
             kwargs["normalized_name"] = _normalize(kwargs["name"])
         sets = ", ".join(f"{k} = ?" for k in kwargs)
-        values = list(kwargs.values()) + [exercise_id]
+        values = [*kwargs.values(), exercise_id]
         self.conn.execute(
             f"UPDATE exercise_templates SET {sets}, updated_at = datetime('now') WHERE id = ?",
             values,
@@ -296,7 +297,7 @@ class ExerciseRepository:
         if "context" in updates and isinstance(updates["context"], dict):
             updates["context"] = json.dumps(updates["context"])
         sets = ", ".join(f"{k} = ?" for k in updates)
-        values = list(updates.values()) + [pref_id]
+        values = [*updates.values(), pref_id]
         cur = self.conn.execute(
             f"UPDATE exercise_preferences SET {sets}, updated_at = datetime('now') WHERE id = ?",
             values,
@@ -331,10 +332,8 @@ class ExerciseRepository:
         ).fetchall()
         for row in rows:
             for field in ("primary_muscles", "secondary_muscles"):
-                try:
+                with contextlib.suppress(json.JSONDecodeError, TypeError):
                     muscles.update(json.loads(row[field] or "[]"))
-                except (json.JSONDecodeError, TypeError):
-                    pass
 
         return {
             "categories": values_for("category"),

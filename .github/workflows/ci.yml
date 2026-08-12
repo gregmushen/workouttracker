@@ -24,7 +24,7 @@ jobs:
     runs-on: [self-hosted, garageband]
     container: python:3.12-slim
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # Pinned deliberately: an unpinned ruff can introduce new rules on release
       # and turn the pipeline red with no code change.
       - run: pip install 'ruff==0.16.1'
@@ -37,7 +37,7 @@ jobs:
     runs-on: [self-hosted, garageband]
     container: zricethezav/gitleaks:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # gitleaks scans history; a shallow clone would silently skip commits.
           fetch-depth: 0
@@ -48,7 +48,7 @@ jobs:
     container: python:3.12-slim
     needs: [lint, secret-scan]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: pip install -e ".[dev]"
       - run: pytest tests/ --tb=short -q
 
@@ -77,7 +77,7 @@ jobs:
       - name: Install git before checkout
         run: apk add --no-cache git
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Trust the checkout directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"

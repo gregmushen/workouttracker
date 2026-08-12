@@ -48,7 +48,7 @@ class WorkoutRepository:
         if not kwargs:
             return False
         sets = ", ".join(f"{k} = ?" for k in kwargs)
-        values = list(kwargs.values()) + [session_id]
+        values = [*kwargs.values(), session_id]
         self.conn.execute(
             f"UPDATE workout_sessions SET {sets}, updated_at = datetime('now') WHERE id = ?",
             values,
@@ -119,7 +119,7 @@ class WorkoutRepository:
         if not kwargs:
             return False
         sets = ", ".join(f"{k} = ?" for k in kwargs)
-        values = list(kwargs.values()) + [set_id]
+        values = [*kwargs.values(), set_id]
         self.conn.execute(
             f"UPDATE workout_sets SET {sets}, updated_at = datetime('now') WHERE id = ?",
             values,
