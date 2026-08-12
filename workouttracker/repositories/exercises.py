@@ -13,6 +13,23 @@ def _normalize(name: str) -> str:
     return " ".join(name.lower().strip().split())
 
 
+def _fts_prefix_query(query: str) -> str:
+    """Build a prefix MATCH expression, dropping characters FTS5 treats as syntax.
+
+    Punctuation left in a term ("Bicycling,*") is an FTS5 syntax error, which the
+    caller would swallow into an empty result — so a name like
+    "Bicycling, Stationary" could never find itself. Terms are reduced to
+    alphanumerics; a query with nothing left yields "" so the caller can skip
+    the query entirely rather than send a malformed one.
+    """
+    terms = []
+    for raw in query.split():
+        term = "".join(ch for ch in raw if ch.isalnum())
+        if term:
+            terms.append(f"{term}*")
+    return " ".join(terms)
+
+
 class ExerciseRepository:
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
@@ -142,7 +159,9 @@ class ExerciseRepository:
         return self._row_to_dict(row)
 
     def search_fts(self, query: str, limit: int = 20, offset: int = 0, **filters) -> list[dict]:
-        fts_query = " ".join(f"{term}*" for term in query.strip().split())
+        fts_query = _fts_prefix_query(query)
+        if not fts_query:
+            return []
         where = ["exercise_templates_fts MATCH ?", "e.active = 1"]
         values = [fts_query]
         for field in ("equipment", "category", "level", "mechanic", "force"):
