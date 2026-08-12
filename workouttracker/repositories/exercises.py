@@ -1,7 +1,6 @@
 import json
 import sqlite3
 
-
 _FIELDS = [
     "source_code", "normalized_name", "category", "equipment", "force",
     "level", "mechanic", "primary_muscles", "secondary_muscles",
@@ -181,7 +180,11 @@ class ExerciseRepository:
                    ORDER BY rank LIMIT ? OFFSET ?""",
                 values,
             ).fetchall()
-        except Exception:
+        # Narrow: only SQLite's own failures mean "this query cannot run"
+        # (missing FTS table, malformed MATCH). Catching bare Exception here is
+        # what hid the punctuation bug — an FTS5 syntax error looked exactly
+        # like an empty result set, so a name could silently never match itself.
+        except sqlite3.Error:
             return []
         return [self._row_to_dict(r) for r in rows]
 

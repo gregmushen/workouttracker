@@ -1,14 +1,23 @@
 import json
 import sqlite3
-from datetime import datetime
+from datetime import UTC, datetime
 from urllib.parse import quote
+
 from fastapi import APIRouter, HTTPException, Request
+
 from workouttracker.config import settings
 from workouttracker.models.exercise import (
-    ExerciseCreate, ExerciseUpdate, ExerciseOut, AliasCreate, AliasOut,
-    ExerciseResolveRequest, ExerciseResolveResponse,
-    ExercisePreferenceCreate, ExercisePreferenceUpdate, ExercisePreferenceOut,
+    AliasCreate,
+    AliasOut,
+    ExerciseCreate,
     ExerciseFacets,
+    ExerciseOut,
+    ExercisePreferenceCreate,
+    ExercisePreferenceOut,
+    ExercisePreferenceUpdate,
+    ExerciseResolveRequest,
+    ExerciseResolveResponse,
+    ExerciseUpdate,
 )
 from workouttracker.repositories.exercises import ExerciseRepository
 from workouttracker.services.exercise_search import ExerciseSearchService
@@ -163,7 +172,10 @@ def add_alias(request: Request, exercise_id: int, body: AliasCreate):
     return {"id": alias_id, "exercise_template_id": exercise_id,
             "alias": normalized, "normalized_alias": normalized,
             "source": body.source, "confidence": body.confidence,
-            "created_at": datetime.now()}
+            # Naive UTC to match list_aliases, which reads this column straight
+            # from SQLite. An aware value here would serialize with an offset
+            # and make the two alias endpoints disagree on timestamp format.
+            "created_at": datetime.now(UTC).replace(tzinfo=None)}
 
 
 @router.get("/{exercise_id}/aliases", response_model=list[AliasOut],

@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any, Literal
+
 from pydantic import BaseModel
 
 SourceType = Literal["free_exercise_db", "custom"]

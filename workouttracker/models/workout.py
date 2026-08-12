@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Literal
+
 from pydantic import BaseModel, model_validator
 
 SetType = Literal["warmup", "working", "drop", "failure", "amrap", "bodyweight", "timed"]

@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import datetime
+from datetime import UTC, datetime
 
 
 class WorkoutRepository:
@@ -57,7 +57,11 @@ class WorkoutRepository:
         return True
 
     def close_session(self, session_id: int, **kwargs) -> dict | None:
-        updates = {"ended_at": datetime.now().isoformat()}
+        # Every other timestamp in this schema comes from SQLite's datetime('now'),
+        # which is naive UTC. Take UTC explicitly, then drop the tzinfo so
+        # ended_at keeps the same shape as the columns it sits beside — an
+        # offset-suffixed value here would be a stored-format change, not a fix.
+        updates = {"ended_at": datetime.now(UTC).replace(tzinfo=None).isoformat()}
         updates.update({k: v for k, v in kwargs.items() if v is not None})
         self.update_session(session_id, **updates)
         return self.get_session(session_id)

@@ -19,16 +19,28 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "httpx>=0.27",
-    "ruff>=0.4",
+    # Pinned to match CI exactly. An unpinned range is how this tree ended up
+    # clean locally on 0.15 and red on 0.16, which widened its default rules.
+    # Bump deliberately, with the cleanup, rather than discovering it in CI.
+    "ruff==0.16.1",
 ]
 
-[tool.ruff.lint]
-# Stated explicitly rather than inherited from whatever ruff's defaults happen
-# to be. There was no config here, so the rule set moved with the installed
-# version: ruff 0.16 widened its defaults and turned this tree red (18 findings)
-# with no code change, while 0.15 passed. These are ruff's historical defaults —
-# widening the set is a deliberate cleanup, not something a CI upgrade decides.
-select = ["E4", "E7", "E9", "F"]
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's dependency injection is expressed as a call in an argument default;
+# Security(_bearer) is the documented idiom, not the mutable-default trap B008
+# exists to catch. Exempting the DI callables keeps B008 meaningful everywhere
+# else instead of blanket-ignoring the rule.
+extend-immutable-calls = [
+    "fastapi.Security",
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.Header",
+    "fastapi.Cookie",
+    "fastapi.Form",
+    "fastapi.File",
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -1,5 +1,6 @@
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from workouttracker.config import settings
 
 _bearer = HTTPBearer(auto_error=False)

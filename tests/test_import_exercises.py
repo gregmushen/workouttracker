@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
+
 from scripts.import_exercises import import_exercises
 from workouttracker.database import get_connection
 from workouttracker.repositories.exercises import ExerciseRepository

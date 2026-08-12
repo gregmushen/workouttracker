@@ -1,11 +1,17 @@
 from fastapi import APIRouter, HTTPException, Request
+
 from workouttracker.models.workout import (
-    WorkoutSessionCreate, WorkoutSessionUpdate, WorkoutSessionOut,
-    WorkoutSetCreate, WorkoutSetUpdate, WorkoutSetOut,
-    BulkSetIn, SessionCloseIn,
+    BulkSetIn,
+    SessionCloseIn,
+    WorkoutSessionCreate,
+    WorkoutSessionOut,
+    WorkoutSessionUpdate,
+    WorkoutSetCreate,
+    WorkoutSetOut,
+    WorkoutSetUpdate,
 )
-from workouttracker.repositories.workouts import WorkoutRepository
 from workouttracker.repositories.exercises import ExerciseRepository
+from workouttracker.repositories.workouts import WorkoutRepository
 from workouttracker.services.exercise_search import ExerciseSearchService
 from workouttracker.services.workout_stats import WorkoutStats
 

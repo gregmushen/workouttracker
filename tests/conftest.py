@@ -1,9 +1,11 @@
-import pytest
 import sqlite3
+
+import pytest
 from fastapi.testclient import TestClient
+
 from workouttracker.config import settings
-from workouttracker.main import app
 from workouttracker.database import init_schema
+from workouttracker.main import app
 from workouttracker.repositories.exercises import ExerciseRepository
 
 

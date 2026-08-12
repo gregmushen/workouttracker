@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
+
 from fastapi import Depends, FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
+
 from workouttracker.auth import require_auth
 from workouttracker.config import settings
 from workouttracker.database import get_connection, init_schema

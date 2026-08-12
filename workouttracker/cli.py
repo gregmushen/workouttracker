@@ -5,7 +5,6 @@ import os
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-
 DEFAULT_DATA_DIR = Path.home() / ".workouttracker"
 DEFAULT_DB_PATH = DEFAULT_DATA_DIR / "workout.db"
 DEFAULT_HOST = "127.0.0.1"
