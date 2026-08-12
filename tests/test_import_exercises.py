@@ -1,5 +1,4 @@
 import json
-import os
 import tempfile
 from pathlib import Path
 
@@ -55,8 +54,8 @@ def test_import_creates_exercises():
         assert results[0]["source"] == "free_exercise_db"
         conn.close()
     finally:
-        os.unlink(path)
-        os.unlink(db_path)
+        Path(path).unlink()
+        Path(db_path).unlink()
 
 
 def test_import_is_idempotent():
@@ -76,8 +75,8 @@ def test_import_is_idempotent():
         assert total == 2
         conn.close()
     finally:
-        os.unlink(path)
-        os.unlink(db_path)
+        Path(path).unlink()
+        Path(db_path).unlink()
 
 
 def test_import_copies_images():
@@ -117,5 +116,5 @@ def test_import_dry_run_does_not_write():
         assert total == 0
         conn.close()
     finally:
-        os.unlink(path)
-        os.unlink(db_path)
+        Path(path).unlink()
+        Path(db_path).unlink()

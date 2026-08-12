@@ -47,7 +47,7 @@ def import_exercises(file_path: str, db_path: str | None = None,
     repo = ExerciseRepository(conn)
     repo.ensure_fts()
 
-    with open(file_path) as f:
+    with Path(file_path).open() as f:
         exercises = json.load(f)
 
     count = 0
